@@ -1,0 +1,62 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="pz-data">
+
+  <script>
+  (function() {
+    var game = {
+      "board": [
+        [
+          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+        [
+          { "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+        [
+          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+        [
+          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+        [
+          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },
+          { "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },{ "isLand": false, "isSea": true },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+        [
+          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
+          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+        ],
+      ]
+    };
+
+    Polymer({
+
+      is: 'pz-data',
+
+      properties: {
+
+        game: {
+          type: Object,
+          value: game,
+          readOnly: true,
+          notify: true
+        }
+
+      }
+
+    });
+
+  })();
+  </script>
+
+</dom-module>

@@ -1,0 +1,48 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+
+<dom-module id="pz-game-technology">
+
+  <template>
+
+    <style>
+
+    </style>
+
+    <app-header role="navigation" condenses reveals>
+      <app-toolbar class="toolbar">
+        TECHNOLOGY
+      </app-toolbar>
+    </app-header>
+
+
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'pz-game-technology',
+
+      properties: {
+
+        visible: {
+          type: Boolean,
+          observer: '_visibleChanged'
+        }
+
+      },
+
+      _visibleChanged(visible) {
+        if (visible) {
+          this.fire('change-section', { title: 'Game Technology' });
+        }
+      }
+
+    });
+
+  </script>
+
+</dom-module>

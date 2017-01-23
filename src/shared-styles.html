@@ -1,0 +1,66 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<!-- shared styles for all views -->
+<dom-module id="shared-styles" include="iron-flex iron-flex-alignment">
+
+  <template>
+
+    <style>
+      :root {
+        --app-primary-color: var(--paper-teal-700);
+        --app-primary-color-soft:var(--paper-teal-200);
+        --app-primary-color-light: var(--paper-teal-50);
+        --app-primary-color-dark:var(--paper-teal-900);
+        --app-secondary-color: var(--paper-red-900);
+        --app-secondary-color-soft: var(--paper-red-300);
+        --app-error-color: var(--paper-pink-400);
+        --error-color: var(--app-error-color);
+        --app-general-padding: 16px;
+        --app-general-padding-tablet: 140px;
+        --app-general-padding-desktop: 280px;
+        --app-toolbar-height: 64px;
+        --app-toolbar-height-tablet: 78px;
+        --app-toolbar-height-desktop: 88px;
+        --app-menu-height-tablet: 38px;
+        --app-menu-height-desktop: 52px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      [opacity] {
+        opacity: 0 !important;
+        transition: all .5s ease .20s;
+      }
+
+      app-header {
+        @apply(--layout-fixed-top);
+        z-index: 1;
+        background-color: rgba(255, 255, 255, 0.95);
+        --app-header-shadow: {
+          box-shadow: inset 0px 5px 6px -3px rgba(0, 0, 0, 0.2);
+          height: 10px;
+          bottom: -10px;
+        };
+      }
+
+      .toolbar {
+        background: #EEE;
+        display: block;
+        line-height: var(--app-toolbar-height);
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.3em;
+        color: #202020;
+        padding: 0 16px;
+        overflow: visible;
+      }
+
+    </style>
+
+  </template>
+  
+</dom-module>

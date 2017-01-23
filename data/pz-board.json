@@ -1,0 +1,10 @@
+[
+  [
+    { "isLand": false, "isSea": true },
+    { "isLand": false, "isSea": true }
+  ],
+  [
+    { "isLand": true, "isSea": false },
+    { "isLand": true, "isSea": false }
+  ]
+]

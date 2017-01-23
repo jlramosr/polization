@@ -1,0 +1,338 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+
+<link rel="import" href="pz-category-data.html">
+
+<link rel="import" href="shared-styles.html">
+
+<!-- Since 'home' is the default route, eagerly load it. -->
+<!--<link rel="import" href="pz-home.html">-->
+<link rel="import" href="pz-game.html">
+
+<dom-module id="pz-app">
+
+  <template>
+
+    <style include="shared-styles">
+
+      :host {
+        display: block;
+        position: relative;
+        padding-top: var(--app-toolbar-height);
+        padding-bottom: var(--app-toolbar-height);
+        min-height: 100vh;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        color: var(--app-primary-color);
+      }
+
+      paper-icon-button {
+        color: var(--app-primary-color);
+      }
+
+      .logo {
+        text-align: center;
+      }
+
+      .logo a {
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.3em;
+        color: var(--app-primary-color);
+        text-decoration: none;
+        /* required for IE 11, so this <a> can receive pointer events */
+        display: inline-block;
+        pointer-events: auto;
+      }
+
+      app-drawer {
+        z-index: 3;
+      }
+
+      iron-pages {
+        max-width: 1440px;
+        margin: 0 auto;
+      }
+
+      footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        margin-top: 20px;
+        line-height: 24px;
+      }
+
+      footer > a {
+        color: var(--app-secondary-color);
+        text-decoration: none;
+      }
+
+      footer > a:hover {
+        text-decoration: underline;
+      }
+
+      /* small screen */
+      @media (max-width: 767px) {
+        :host {
+          padding-top: var(--app-toolbar-height);
+        }
+
+        .menu-btn {
+          display: block;
+        }
+
+        :host([page=detail]) .menu-btn {
+          display: none;
+        }
+      }
+
+    </style>
+
+    <pz-analytics key="UA-39334307-16"></pz-analytics>
+    <!--
+      app-location and app-route elements provide the state of the URL for the app.
+    -->
+    <app-location route="{{route}}"></app-location>
+    <app-route
+        route="{{route}}"
+        pattern="/:page"
+        data="{{routeData}}"
+        tail="{{subroute}}"></app-route>
+
+    <iron-media-query query="max-width: 767px" query-matches="{{smallScreen}}"></iron-media-query>
+
+    <!--
+      zp-category-data provides the list of categories.
+    -->
+    <pz-category-data categories="{{categories}}"></pz-category-data>
+
+    <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible" fallback-selection="404">
+      <!-- home view -->
+      <!--<pz-home name="home" categories="[[categories]]"></pz-home>-->
+      <pz-game name="game"></pz-game>
+      <!-- list of games -->
+      <!-- list of friends -->
+      <!-- new game -->
+      <!-- user settings -->
+
+      <pz-404-warning name="404"></pz-404-warning>
+    </iron-pages>
+
+    <!-- Lazy-create the drawer for small screen sizes. -->
+    <template is="dom-if" if="[[_shouldRenderDrawer]]">
+      <!-- Two-way bind `drawerOpened` since app-drawer can update `opened` itself. -->
+      <app-drawer opened="{{drawerOpened}}" swipe-open tabindex="0">
+      </app-drawer>
+    </template>
+
+    <!-- Lazy-create the drawer for small screen sizes. -->
+    <template is="dom-if" if="[[_shouldRenderFooter]]">
+      <footer>
+        <a href="https://www.polymer-project.org/1.0/toolbox/">Made by José Luis Ramos</a>
+      </footer>
+    </template>
+
+
+    <!-- a11y announcer -->
+    <div class="announcer" aria-live="assertive">[[_a11yLabel]]</div>
+
+  </template>
+
+  <script>
+
+    // performance logging
+    window.performance && performance.mark && performance.mark('pz-app - before register');
+
+    Polymer({
+
+      is: 'pz-app',
+
+      properties: {
+
+        page: {
+          type: String,
+          reflectToAttribute: true,
+          observer: '_pageChanged'
+        },
+
+        _shouldRenderDrawer: {
+          computed: '_computeShouldRenderDrawer(smallScreen, loadComplete)'
+        },
+
+        _shouldRenderFooter: {
+          computed: '_computeShouldRenderFooter(smallScreen)'
+        }
+      },
+
+      observers: [
+        '_routePageChanged(routeData.page)'
+      ],
+
+      listeners: {
+        'change-section': '_onChangeSection',
+        'announce': '_onAnnounce',
+        'dom-change': '_domChange',
+        'show-invalid-url-warning': '_onFallbackSelectionTriggered'
+      },
+
+      created() {
+        window.performance && performance.mark && performance.mark('pz-app.created');
+        // Custom elements polyfill safe way to indicate an element has been upgraded.
+        this.removeAttribute('unresolved');
+      },
+
+      ready() {
+        // listen for online/offline
+        Polymer.RenderStatus.afterNextRender(this, function() {
+          this.listen(window, 'online', '_notifyNetworkStatus');
+          this.listen(window, 'offline', '_notifyNetworkStatus');
+        });
+      },
+
+      _routePageChanged(page) {
+        //this.page = page || 'home';
+        this.page = page || 'game';
+
+        // Close the drawer - in case the *route* change came from a link in the drawer.
+        this.drawerOpened = false;
+      },
+
+      _pageChanged(page, oldPage) {
+        if (page != null) {
+          // home route is eagerly loaded
+          //if (page == 'home') {
+          if (page == 'game') {
+            this._pageLoaded(Boolean(oldPage));
+          // other routes are lazy loaded
+          } else {
+            // When a load failed, it triggered a 404 which means we need to
+            // eagerly load the 404 page definition
+            var cb = this._pageLoaded.bind(this, Boolean(oldPage));
+            this.importHref(
+              this.resolveUrl('pz-' + page + '.html'),
+              cb, cb, true);
+          }
+        }
+      },
+
+      _pageLoaded(shouldResetLayout) {
+        this._ensureLazyLoaded();
+        if (shouldResetLayout) {
+          // The size of the header depends on the page (e.g. on some pages the tabs
+          // do not appear), so reset the header's layout only when switching pages.
+          this.async(function() {
+            this.$.header.resetLayout();
+          }, 1);
+        }
+      },
+
+      _ensureLazyLoaded() {
+        // load lazy resources after render and set `loadComplete` when done.
+        if (!this.loadComplete) {
+          Polymer.RenderStatus.afterNextRender(this, _ => {
+            this.importHref(this.resolveUrl('lazy-resources.html'), _ => {
+              // Register service worker if supported.
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js');
+              }
+              this._notifyNetworkStatus();
+              this.loadComplete = true;
+            });
+          });
+        }
+      },
+
+      _notifyNetworkStatus() {
+        var oldOffline = this.offline;
+        this.offline =  !navigator.onLine;
+        // Show the snackbar if the user is offline when starting a new session
+        // or if the network status changed.
+        if (this.offline || (!this.offline && oldOffline === true)) {
+          if (!this._networkSnackbar) {
+            this._networkSnackbar = document.createElement('pz-snackbar');
+            Polymer.dom(this.root).appendChild(this._networkSnackbar);
+          }
+          Polymer.dom(this._networkSnackbar).innerHTML = this.offline ?
+              'You are offline' : 'You are online';
+          this._networkSnackbar.open();
+        }
+      },
+
+      _toggleDrawer() {
+        this.drawerOpened = !this.drawerOpened;
+      },
+
+      // Elements in the app can notify section changes.
+      // Response by a11y announcing the section and syncronizing the category.
+      _onChangeSection(event) {
+        var detail = event.detail;
+
+        this.categoryName = detail.category || '';
+
+        // Announce the page's title
+        if (detail.title) {
+          document.title = detail.title + ' - POLIZATION';
+          this._announce(detail.title + ', loaded');
+        }
+      },
+
+      // Elements in the app can notify a change to be a11y announced.
+      _onAnnounce(e) {
+        this._announce(e.detail);
+      },
+
+      // A11y announce the given message.
+      _announce(message) {
+        this._a11yLabel = '';
+        this.debounce('_a11yAnnouncer', function() {
+          this._a11yLabel = message;
+        }, 100);
+      },
+
+      // This is for performance logging only.
+      _domChange(e) {
+        if (window.performance && performance.mark && !this.__loggedDomChange) {
+          var target = Polymer.dom(e).rootTarget;
+          if (target.domHost.is.match(this.page)) {
+            this.__loggedDomChange = true;
+            performance.mark(target.domHost.is + '.domChange');
+          }
+        }
+      },
+
+      _onFallbackSelectionTriggered() {
+        this.page = '404';
+      },
+
+      _computeShouldRenderFooter(smallScreen) {
+        return !smallScreen;
+      },
+
+      _computeShouldRenderDrawer(smallScreen, loadComplete) {
+        return smallScreen && loadComplete;
+      },
+
+      _computePluralizedQuantity(quantity) {
+        return quantity + ' ' + (quantity === 1 ? 'item' : 'items');
+      }
+
+    });
+
+  </script>
+
+</dom-module>

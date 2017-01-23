@@ -1,0 +1,70 @@
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+
+<link rel="import" href="pz-data.html">
+
+<link rel="import" href="pz-game-board.html">
+<link rel="import" href="pz-game-technology.html">
+
+<dom-module id="pz-game">
+
+  <template>
+
+    <style>
+
+    </style>
+
+    <pz-data game="{{game}}" loading="{{loading}}"></pz-data>
+
+    <!--iron-pages-->
+      <pz-game-board board="[[game.board]]"></pz-game-board>
+      <!--<pz-game-technology></pz-game-technology>-->
+    <!---->
+
+
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'pz-game',
+
+      properties: {
+
+        game: Object,
+
+        loading: {
+          type: Boolean,
+          observer: '_loadingChanged'
+        },
+
+        visible: {
+          type: Boolean,
+          observer: '_visibleChanged'
+        }
+
+      },
+
+      _loadingChanged(loading) {
+        if (loading) {
+          this.fire('start-loading', { section: 'Game' });
+        } else {
+          this.fire('finish-loading', { section: 'Game' });
+        }
+      },
+
+      _visibleChanged(visible) {
+        if (visible) {
+          this.fire('change-section', { title: 'Game' });
+        }
+      }
+
+    });
+
+  </script>
+
+</dom-module>

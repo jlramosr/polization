@@ -1,0 +1,95 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="pz-game-square">
+
+  <template>
+
+    <style>
+      :hosts {
+        display: block;
+      }
+
+      .square {
+        border: 1px solid #FFF;
+      }
+
+      .square--land {
+        background-image: url("../images/pz-game-square-land.png");
+      }
+
+      .square--sea {
+        background-image: url("../images/pz-game-square-sea.png");
+      }
+    </style>
+
+    <div id="square" class$="square [[_computeClass(isLand, isSea)]]">
+
+    </div>
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'pz-game-square',
+
+      properties: {
+
+        isLand: {
+          type: Boolean,
+          value: true
+        },
+
+        isSea: {
+          type: Boolean,
+          value: false
+        },
+
+        zoom: Number,
+
+        /**
+          * Value in pixels of zoom increase or decrease when it changes.
+          */ 
+        increaseZoom: {
+          type: Number,
+          readOnly: true,
+          value: 20
+        },
+
+      },
+
+      listeners: {
+        'click': '_click' 
+      },
+
+      observers: [
+        '_zoomChanged(zoom, increaseZoom)'
+      ],
+
+      /*attached() {
+        this.$.square.style.width = this.initialSize + "px";
+        this.$.square.style.height = this.initialSize + "px";
+      },*/
+
+      _zoomChanged(zoom, increaseZoom) {
+        this.$.square.style.width = (increaseZoom * (zoom + 1)) + "px";
+        this.$.square.style.height = (increaseZoom * (zoom + 1)) + "px";
+      },
+
+      _click(event) {
+        console.log("CASILLA");
+      },
+
+      _computeClass(isLand, isSea) {
+        if (isSea) {
+          return 'square--sea';
+        }
+        return 'square--land';
+      }
+
+    });
+
+  </script>
+
+</dom-module>

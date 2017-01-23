@@ -1,0 +1,117 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+
+<link rel="import" href="shared-styles.html">
+
+<link rel="import" href="pz-game-square.html">
+
+<dom-module id="pz-game-board">
+
+  <template>
+
+    <style include="shared-styles">
+
+      :host {
+        display: block;
+      }
+
+      .canvas {
+        background: #333;
+      }
+
+      .board {
+        @apply(--layout-vertical);
+      }
+
+      .board__row {
+        @apply(--layout-horizontal);
+      }
+
+    </style>
+
+
+    <app-header role="navigation" fixed>
+      <app-toolbar class="toolbar">
+        BOARD
+      </app-toolbar>
+    </app-header>
+
+    <canvas id="canvas" class="canvas" width="500" height="500">
+
+      <div id="board" class="board">
+        <template is="dom-repeat" items="[[board]]">
+          <div class="board__row">
+            <template is="dom-repeat" items="[[_getRowSquares(index)]]">
+              <pz-game-square 
+                zoom="{{zoom}}"
+                is-sea="[[item.isSea]]"
+                is-land="[[item.isLand]]"></pz-game-square>
+            </template>
+          </div>
+        </template>
+      </div>
+
+    </canvas>
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'pz-game-board',
+
+      properties: {
+
+        board: Array,
+
+        zoom: {
+          type: Number,
+          value: 4
+        },
+
+        visible: {
+          type: Boolean,
+          observer: '_visibleChanged'
+        }
+
+      },
+
+      listeners: {
+        'wheel': '_onWheel'
+      },
+
+      attached() {
+        const canvas = this.$.canvas;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = "rgb(200,0,0)";
+        ctx.fillRect (0, 0, 100, 100);
+
+        ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
+        ctx.fillRect (100, 0, 100, 100);
+        console.log("canvas", ctx);
+      },
+
+      _getRowSquares(index) {
+        return this.board[index];
+      },
+
+      _onWheel(event) {
+        event.preventDefault();
+        if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
+        if (event.deltaY > 0 && this.zoom > 0) this.zoom -= 1;
+        
+      },
+
+      _visibleChanged(visible) {
+        if (visible) {
+          this.fire('change-section', { title: 'Game Board' });
+        }
+      }
+
+    });
+
+  </script>
+
+</dom-module>
