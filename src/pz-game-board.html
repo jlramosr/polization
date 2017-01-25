@@ -5,6 +5,7 @@
 <link rel="import" href="shared-styles.html">
 
 <link rel="import" href="pz-game-square.html">
+<link rel="import" href="pz-game-piece.html">
 
 <dom-module id="pz-game-board">
 
@@ -17,7 +18,8 @@
       }
 
       .canvas {
-        background: #333;
+        transform-origin: top left;
+        position: relative;
       }
 
       .board {
@@ -26,6 +28,12 @@
 
       .board__row {
         @apply(--layout-horizontal);
+      }
+
+      .pieces {
+        position: absolute;
+        left: 0;
+        top: 0;
       }
 
     </style>
@@ -37,22 +45,42 @@
       </app-toolbar>
     </app-header>
 
-    <canvas id="canvas" class="canvas" width="500" height="500">
+    <div id="container" class="container">
 
-      <div id="board" class="board">
-        <template is="dom-repeat" items="[[board]]">
-          <div class="board__row">
-            <template is="dom-repeat" items="[[_getRowSquares(index)]]">
-              <pz-game-square 
-                zoom="{{zoom}}"
-                is-sea="[[item.isSea]]"
-                is-land="[[item.isLand]]"></pz-game-square>
+      <div id="canvas" class="canvas">
+
+        <div id="board" class="board">
+          <template is="dom-repeat" items="[[board]]" index-as="y">
+            <div class="board__row">
+              <template is="dom-repeat" items="[[_getRowSquares(y)]]" as="square" index-as="x">
+                <pz-game-square 
+                  sea="[[square.isSea]]"
+                  land="[[square.isLand]]"
+                  visible="[[square.isVisible]]"
+                  position-x="[[x]]"
+                  position-y="[[y]]"></pz-game-square>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <div id="pieces" class="pieces">
+          <template is="dom-repeat" items="[[civilizations]]" as="civilization">
+            <template is="dom-repeat" items="[[civilization.pieces]]" as="piece">
+              <pz-game-piece 
+                type="[[piece.type]]" 
+                position-x="[[piece.positionX]]"
+                position-y="[[piece.positionY]]"
+                user="[[civilization.user]]"
+                color="[[civilization.color]]"
+                movement="[[piece.movement]]"></pz-game-piece>
             </template>
-          </div>
-        </template>
+          </template>
+        </div>
+
       </div>
 
-    </canvas>
+    </div>
 
   </template>
 
@@ -66,9 +94,12 @@
 
         board: Array,
 
+        civilizations: Array,
+
         zoom: {
           type: Number,
-          value: 4
+          value: 4,
+          observer: '_zoomChanged'
         },
 
         visible: {
@@ -79,29 +110,85 @@
       },
 
       listeners: {
-        'wheel': '_onWheel'
-      },
-
-      attached() {
-        const canvas = this.$.canvas;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = "rgb(200,0,0)";
-        ctx.fillRect (0, 0, 100, 100);
-
-        ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
-        ctx.fillRect (100, 0, 100, 100);
-        console.log("canvas", ctx);
+        'wheel': '_onWheelMouse',
+        /* Pieces */
+        'click-piece': '_onClickPiece'
       },
 
       _getRowSquares(index) {
         return this.board[index];
       },
 
-      _onWheel(event) {
+      _onWheelMouse(event) {
         event.preventDefault();
         if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
-        if (event.deltaY > 0 && this.zoom > 0) this.zoom -= 1;
-        
+        if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
+      },
+
+      _onClickPiece(event) {
+        const pieceClicked = event.detail;
+        if (!Boolean(pieceClicked.user)) return;
+        const allPieces = Polymer.dom(this.$.pieces).querySelectorAll('pz-game-piece');
+        const allSquares = Polymer.dom(this.$.board).querySelectorAll('pz-game-square');
+        for (piece of allPieces) {
+          if (piece === pieceClicked) {
+            pieceClicked.active = true;
+            for (square of allSquares) {
+              if (this._isNear(square, pieceClicked, pieceClicked.movement)) {
+                square.active = true;
+              }
+              else {
+                square.active = false;
+              }
+            }
+          }
+          else {
+            piece.active = false;
+          }     
+        }
+      },
+
+      _zoomChanged(zoom, oldZoom) {
+        if (oldZoom) {
+          const initialScale = this._zoomToScale(oldZoom);
+          const finalScale = this._zoomToScale(zoom);
+          const animation = this.$.canvas.animate([
+            { 'transform': `scale(${initialScale})` }, 
+            { 'transform': `scale(${finalScale})` }
+          ], { 
+            duration: 100,
+          });
+          animation.onfinish = _ => {
+            this.$.canvas.style.transform = `scale(${finalScale})`;
+          };
+        }
+      },
+
+      /**
+        * It transforms a level of zoom in scale to handle mouse wheel events.
+        *
+        * A zoom of 4 is equivalent to scale of 1. Width and height of all squares in 
+        * scale equal to 1 is indicated in --app-square-size variable of shared-styles CSS.
+        * 
+        *-@param {Number} Zoom level.
+        * @return {Number} The scale to use in the animation.
+        */
+      _zoomToScale(zoom) {
+        return zoom/4;
+      },
+
+      /**
+        * It indicates if one piece is near of other one.
+        * 
+        * @param {Object} First piece or square with its positions.
+        * @param {Object} Second piece or square with its positions.
+        *-@param {Number} Number of around square.
+        * @return {Boolean} True if it's near, false in other case.
+        */
+      _isNear(square1, square2, numberSquares) {
+        return Boolean(numberSquares) &&
+               Math.abs(square1.positionX - square2.positionX) <= numberSquares &&
+               Math.abs(square1.positionY - square2.positionY) <= numberSquares;
       },
 
       _visibleChanged(visible) {

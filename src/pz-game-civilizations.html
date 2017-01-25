@@ -1,0 +1,63 @@
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+
+<dom-module id="pz-game-civilizations">
+
+  <template>
+
+    <style>
+
+    </style>
+
+    <app-header role="navigation" fixed>
+      <app-toolbar class="toolbar">
+        CIVILIZATIONS
+      </app-toolbar>
+    </app-header>
+
+    <div id="container" class="container">
+
+      <div id="civilizations" class="civilizations">
+        <iron-list items="[[civilizations]]">
+          <template>
+            <span style$="color: [[item.color]]">[[item.name]]</span>
+          </template>
+        </iron-list>
+      </div>
+
+    </div>
+
+
+  </template>
+
+    <script>
+
+    Polymer({
+
+      is: 'pz-game-civilizations',
+
+      properties: {
+
+        civilizations: Array,
+
+        visible: {
+          type: Boolean,
+          observer: '_visibleChanged'
+        }
+
+      },
+
+      _visibleChanged(visible) {
+        if (visible) {
+          this.fire('change-section', { title: 'Game Technology' });
+        }
+      }
+
+    });
+
+  </script>
+
+</dom-module>

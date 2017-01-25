@@ -7,35 +7,46 @@
     var game = {
       "board": [
         [
-          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true },{ "isLand": false, "isSea": true, "isVisible": true },{ "isLand": true, "isSea": false, "isVisible": true },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  }
         ],
         [
-          { "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  }
         ],
         [
-          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  }
         ],
         [
-          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  }
         ],
         [
-          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },
-          { "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },{ "isLand": false, "isSea": true },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": false  },
+          { "isLand": false, "isSea": true, "isVisible": false  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  }
         ],
         [
-          { "isLand": false, "isSea": true },{ "isLand": false, "isSea": true },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },{ "isLand": true, "isSea": false },
-          { "isLand": true, "isSea": false },{ "isLand": true, "isSea": false }
+          { "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": false, "isSea": true, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },{ "isLand": true, "isSea": false, "isVisible": true  },
+          { "isLand": true, "isSea": false, "isVisible": false  },{ "isLand": true, "isSea": false, "isVisible": false  }
         ],
+      ],
+      "civilizations": [
+        {"name": "Spain", "color": "red", "user": "12345", "pieces": [
+          {"type": "explorer", "positionX": 3, "positionY": 5, "movement": 2 },
+          {"type": "spearman", "positionX": 1, "positionY": 1, "movement": 1 },
+        ]},
+        {"name": "England", "color": "blue", "user": "", "pieces": [
+          {"type": "spearman", "positionX": 3, "positionY": 0, "movement": 1  },
+          {"type": "explorer", "positionX": 5, "positionY": 2, "movement": 2  },
+          {"type": "spearman", "positionX": 1, "positionY": 3, "movement": 1  },
+        ]},
       ]
     };
 

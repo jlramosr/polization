@@ -1,0 +1,110 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="pz-game-piece">
+
+  <template>
+
+    <style>
+      :hosts {
+        display: block;
+      }
+
+      .piece {
+        position:absolute; 
+        width: var(--app-piece-size);
+        height: var(--app-piece-size);
+        cursor: pointer;
+      }
+
+      .piece--user {
+        cursor: pointer;
+      }
+
+      .piece--computer{
+        cursor: auto;
+      }
+
+      .piece--active {
+        opacity: 1;
+      }
+
+      .piece--inactive {
+        opacity: 0.8;
+      }
+
+    </style>
+
+    <iron-icon 
+      class$="piece piece--[[_computeClassActive(active)]] piece--[[_computeClassUser(user)]]" 
+      style$="color:[[color]]; top:[[_getPixelsPosition(positionY)]]px; left:[[_getPixelsPosition(positionX)]]px;"
+      icon$="[[type]]"></iron-icon>
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'pz-game-piece',
+
+      properties: {
+
+        positionX: Number,
+
+        positionY: Number,
+
+        type: String,
+
+        active: { 
+          type: Boolean,
+          value: false 
+        },
+
+        user: {
+          type: String,
+          value: ''
+        },
+
+        color: String,
+
+        movement: Number,
+
+        defense: Number,
+
+        attack: Number
+
+      },
+
+      listeners: {
+        'click': '_onClick'
+      },
+
+      observers: [
+        
+      ],
+
+      _onClick(event) {
+        this.fire('click-piece', this);
+      },
+  
+      _getPixelsPosition(position) {
+        const appSquareSize = 72;
+        const appPieceSize = 48;
+        return appSquareSize*position + ((appSquareSize-appPieceSize)/2);
+      },
+
+      _computeClassActive(active) {
+        if (active) return 'active';
+        return 'inactive';
+      },
+
+      _computeClassUser(user) {
+        if (Boolean(user)) return 'user';
+        return 'computer';
+      }
+
+    });
+
+  </script>
+
+</dom-module>

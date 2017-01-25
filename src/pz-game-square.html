@@ -10,7 +10,12 @@
       }
 
       .square {
-        border: 1px solid #FFF;
+        width: var(--app-square-size);
+        height: var(--app-square-size);
+      }
+
+      .square--invisible {
+        background: #333;
       }
 
       .square--land {
@@ -20,9 +25,17 @@
       .square--sea {
         background-image: url("../images/pz-game-square-sea.png");
       }
+
+      .square--active {
+        opacity: 1;
+      }
+
+      .square--inactive {
+        opacity: 0.8;
+      }
     </style>
 
-    <div id="square" class$="square [[_computeClass(isLand, isSea)]]">
+    <div id="square" class$="square square--[[_computeClassType(visible, land, sea)]] square--[[_computeClassActive(active)]]">
 
     </div>
 
@@ -36,26 +49,29 @@
 
       properties: {
 
-        isLand: {
+        positionX: Number,
+
+        positionY: Number,
+
+        visible: {
           type: Boolean,
           value: true
         },
 
-        isSea: {
+        land: {
+          type: Boolean,
+          value: true
+        },
+
+        sea: {
           type: Boolean,
           value: false
         },
 
-        zoom: Number,
-
-        /**
-          * Value in pixels of zoom increase or decrease when it changes.
-          */ 
-        increaseZoom: {
-          type: Number,
-          readOnly: true,
-          value: 20
-        },
+        active: {
+          type: Boolean,
+          value: false
+        }
 
       },
 
@@ -64,28 +80,22 @@
       },
 
       observers: [
-        '_zoomChanged(zoom, increaseZoom)'
+        
       ],
-
-      /*attached() {
-        this.$.square.style.width = this.initialSize + "px";
-        this.$.square.style.height = this.initialSize + "px";
-      },*/
-
-      _zoomChanged(zoom, increaseZoom) {
-        this.$.square.style.width = (increaseZoom * (zoom + 1)) + "px";
-        this.$.square.style.height = (increaseZoom * (zoom + 1)) + "px";
-      },
 
       _click(event) {
         console.log("CASILLA");
       },
 
-      _computeClass(isLand, isSea) {
-        if (isSea) {
-          return 'square--sea';
-        }
-        return 'square--land';
+      _computeClassType(visible, land, sea) {
+        if (visible && land) return 'land';
+        if (visible && sea) return 'sea';
+        return 'invisible';
+      },
+
+      _computeClassActive(active) {
+        if (active) return 'active';
+        return 'inactive';
       }
 
     });
