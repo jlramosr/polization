@@ -1,0 +1,180 @@
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="josito-pointer-events2">
+
+  <template>
+
+    <style>
+      :host {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50px;
+        height: 50px;
+        background-color: blue;
+        opacity: 0.5;
+        /* 
+         * Disable predetermined touch events (user agent is new manager).
+         *
+         * It's used to allow pointer events.
+         * User agent is the new manager and it listens events of user agent like pointer events.
+         */ 
+         touch-action: none;
+      }
+
+      :host([selected]) {
+        opacity: 1;
+        user-select: none;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+        -webkit-user-select: none;
+        /* Required to make elements draggable in old WebKit */
+        -khtml-user-drag: element;
+        -webkit-user-drag: element;
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
+      }
+
+      :host([dragging]) {
+        display: none;
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
+      }
+
+    </style>
+
+  </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'josito-pointer-events2',
+
+      properties: {
+
+        selected: {
+          type: Boolean,
+          reflectToAttribute: true,
+          readOnly: true,
+          value: false,
+        },
+
+        dragging: {
+          type: Boolean,
+          reflectToAttribute: true,
+          readOnly: true,
+          value: false
+        },
+
+        positionX: {
+          type: Number,
+          value: 0
+        },
+
+        positionY: {
+          type: Number,
+          value: 0
+        },
+
+        oldX: Number,
+
+        oldY: Number
+
+      },
+
+      listeners: {
+        'tap': '_onTap',
+        'drag': '_onStartDrag',
+        'dragend': '_onEndDrag'
+      },
+
+      _onTap(event) {
+        this.selected ? this._setSelected(false) : this._setSelected(true); 
+      },
+
+      _onStartDrag(event) {
+
+        if (!this.dragging) {
+
+          this.oldX = this.positionX;
+          this.oldY = this.positionY;
+
+          this.positionX = event.clientX;
+          this.positionY = event.clientY;   
+
+          console.log("START DRAGGING");
+          event.preventDefault();
+          this._setDragging(true);
+
+        }
+      },
+
+      _onEndDrag(event) {
+        console.log("FINISH DRAGGING");
+        this._setDragging(false);
+        console.log("PICO", this.oldX, this.oldY, "PULSADO", this.positionX, this.positionY, "DEJADO CAER", event.clientX, event.clientY);
+        const endPositionX = event.clientX - this.positionX + this.oldX;
+        const endPositionY = event.clientY - this.positionY + this.oldY; 
+        this.positionX = endPositionX;
+        this.positionY = endPositionY;
+        this.translate3d(endPositionX + 'px', endPositionY + 'px',0);
+      },
+
+      _onDragOverBoard(event) {
+        if (this.bolitaDragging) {
+          console.log("DRAGGING OVER BOARD");
+          event.preventDefault();
+          this.translate3d('50px','0px','500px', this.$.bolita);
+        }
+      },
+
+      _onPointerDownBolita(event) {
+        /*const bolita = event.currentTarget;
+        if (event.pointerType == 'mouse') {
+          this._setDragging(true);
+          bolita.classList.add('bolita--pointerdown');
+          if ('vibrate' in navigator) {
+            navigator.vibrate(30);
+          }
+          this.$.board.addEventListener('pointermove', ev => {
+            if (this.dragging) {
+              this.translate3d('0px','0px','500px', bolita);
+            }
+          });
+          this.$.board.addEventListener('pointerup', ev => {
+            if (this.dragging) {
+              this._setDragging(false);
+              bolita.classList.remove('bolita--pointerdown'); 
+            }
+          });
+        }*/
+      },
+
+      _onPointerUpBolita(event) {
+        if (event.pointerType == 'mouse') {
+          this.dragging = false;
+          event.currentTarget.classList.remove('bolita--pointerdown');
+        }
+      },
+
+      _onPointerOverBolita(event) {
+        if (event.pointerType == 'mouse') {
+          event.currentTarget.classList.add('bolita--pointerover');
+        }
+      },
+
+      _onPointerOutBolita(event) {
+        if (event.pointerType == 'mouse') {
+          event.currentTarget.classList.remove('bolita--pointerover');
+        }
+      }
+
+    });
+
+  </script>
+
+</dom-module>

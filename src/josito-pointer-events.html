@@ -44,25 +44,41 @@
         width: 50px;
         height: 50px;
         background-color: blue;
-        opacity: 0.8;
+        opacity: 0.5;
       }
 
-      .bolita--pointerover {
+      :host([bolita-selected]) .bolita {
         opacity: 1;
+        user-select: none;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+        -webkit-user-select: none;
+        /* Required to make elements draggable in old WebKit */
+        -khtml-user-drag: element;
+        -webkit-user-drag: element;
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
       }
 
-      .bolita--pointerdown {
-        background-color: darkblue;
+      :host([bolita-dragging]) .bolita {
+        display: none;
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
       }
 
     </style>
 
 
     
-    <div id="board">
-      <div id="bolita" class="bolita" on-pointerdown="_onPointerDownBolita"></div>
+    <div id="board" class="board">
+      <div 
+        id="bolita" 
+        class="bolita"
+        on-tap="_onTapBolita"></div>
     </div>
- 
+
 
   </template>
 
@@ -74,18 +90,35 @@
 
       properties: {
 
-        bolitaDown: {
+        bolitaSelected: {
           type: Boolean,
+          reflectToAttribute: true,
+          readOnly: true,
           value: false,
-          observer: '_bolitaDownChanged'
-        }
+        },
+
+        bolitaDragging: {
+          type: Boolean,
+          reflectToAttribute: true,
+          readOnly: true,
+          value: false
+        },
+
+        positionX: Number,
+
+        positionY: Number
 
       },
 
+      listeners: {
+        'drag': '_onStartDragBolita',
+        'dragend': '_onEndDragBolita'
+      },
+
       attached() {
-        // this.$.canvas.addEventListener('click', this._onClickCanvas);
+        //  this.$.canvas.addEventListener('click', this._onClickCanvas);
         // this.$.subcanvas.addEventListener('click', this._onClickSubcanvas);
-        // this.$.Board.addEventListener('click', this._onClickBoard);
+        //  this.$.board.addEventListener('click', this._onClickBoard);
         // this.$.canvas.addEventListener('contextmenu', this._onRightClickCanvas);
         // this.$.subcanvas.addEventListener('contextmenu', this._onRightClickSubcanvas);
         // this.$.Board.addEventListener('contextmenu', this._onRightClickBoard);
@@ -122,38 +155,72 @@
         // this.$.canvas.addEventListener('lostpointercapture', this._onLostPointerCapture); 
       },
 
-      _onPointerDownBolita(event) {
+      _onTapBolita(event) {
         const bolita = event.currentTarget;
+        this.bolitaSelected ? this._setBolitaSelected(false) : this._setBolitaSelected(true); 
+      },
+
+      _onStartDragBolita(event) {
+
+        if (!this.bolitaDragging) {
+
+          this.positionX = event.screenX;
+          this.positionY = event.screenY;
+
+          console.log("START DRAGGING", this.positionX, this.positionY, this.$.bolita.stye.left );
+          event.preventDefault();
+          this._setBolitaDragging(true);
+
+          this.$.board.addEventListener('dragover', ev => {
+            console.log("DRAGGING OVER BOARD");
+            event.preventDefault();
+          }); 
+
+        }
+      },
+
+      _onEndDragBolita(event) {
+        console.log("FINISH DRAGGING", this);
+        this._setBolitaDragging(false);
+        const endPositionX = event.screenX - this.positionX;
+        const endPositionY = event.screenY - this.positionY; 
+        console.log("EMPEZÓ EN", this.positionX, this.positionY, "TERMINÓ EN", event.screenX, event.screenY, "POR LO TANTO MOVER", endPositionX, endPositionY);
+        this.translate3d(endPositionX + 'px', endPositionY + 'px','1px', this.$.bolita);
+      },
+
+      _onDragOverBoard(event) {
+        if (this.bolitaDragging) {
+          console.log("DRAGGING OVER BOARD");
+          event.preventDefault();
+          this.translate3d('50px','0px','500px', this.$.bolita);
+        }
+      },
+
+      _onPointerDownBolita(event) {
+        /*const bolita = event.currentTarget;
         if (event.pointerType == 'mouse') {
-          this.bolitaDown = true;
+          this._setDragging(true);
           bolita.classList.add('bolita--pointerdown');
+          if ('vibrate' in navigator) {
+            navigator.vibrate(30);
+          }
           this.$.board.addEventListener('pointermove', ev => {
-            if (this.bolitaDown) {
-              console.log("SE ESTA MOVIENDO LA BOLITA POR EL BOARD", ev);
-              const animation = bolita.animate([
-                { 'transform': `translate(0px, 0px)` }, 
-                { 'transform': `translate(${event.screenX}px, ${event.screenY}px)` }
-              ], { 
-                duration: 5000,
-              });
-              //mirar translate3d https://github.com/sharedlabs/sortable-list/blob/master/sortable-list.html
-              animation.onfinish = _ => {
-              };
+            if (this.dragging) {
+              this.translate3d('0px','0px','500px', bolita);
             }
           });
           this.$.board.addEventListener('pointerup', ev => {
-            if (this.bolitaDown) {
-              console.log("SE HA DEJADO DE MOVER LA BOLITA POR EL BOARD", ev);
-              this.bolitaDown = false;
+            if (this.dragging) {
+              this._setDragging(false);
               bolita.classList.remove('bolita--pointerdown'); 
             }
           });
-        }
+        }*/
       },
 
       _onPointerUpBolita(event) {
         if (event.pointerType == 'mouse') {
-          this.bolitaDown = false;
+          this.dragging = false;
           event.currentTarget.classList.remove('bolita--pointerdown');
         }
       },
@@ -170,13 +237,13 @@
         }
       },
 
-      _bolitaDownChanged(bolitaDown, oldBolitaDown) {
-        console.log("_bolitaDownChanged", bolitaDown, oldBolitaDown);
+      _draggingChanged(dragging, olddragging) {
+        // console.log("_draggingChanged", dragging, olddragging);
       },
 
       _onClickCanvas(event)     { console.log("Click en CANVAS", event); },
       _onClickSubcanvas(event)  { console.log("Click en SUBCANVAS", event); },
-      _onClickBoard(event)  { console.log("Click en CANVAS ABSOLUTE", event); },
+      _onClickBoard(event)  { event.stopPropagation(); console.log("Click en CANVAS ABSOLUTE", event); },
       _onRightClickCanvas(event)     { event.preventDefault(); console.log("Right click en CANVAS", event); },
       _onRightClickSubcanvas(event)  { event.preventDefault(); console.log("Right click en SUBCANVAS", event); },
       _onRightClickBoard(event)  { event.preventDefault(); console.log("Right click en CANVAS ABSOLUTE", event); },

@@ -17,6 +17,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="pz-category-data.html">
 
+<link rel="import" href="josito-pointer-events2.html">
+
 <link rel="import" href="shared-styles.html">
 
 <!-- Since 'home' is the default route, eagerly load it. -->
@@ -121,10 +123,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     -->
     <pz-category-data categories="{{categories}}"></pz-category-data>
 
+
     <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible" fallback-selection="404">
       <!-- home view -->
       <!--<pz-home name="home" categories="[[categories]]"></pz-home>-->
-      <pz-game name="game"></pz-game>
+      <!--<pz-game name="game"></pz-game>-->
+      <josito-pointer-events2 name="game"></josito-pointer-events2>
       <!-- list of games -->
       <!-- list of friends -->
       <!-- new game -->

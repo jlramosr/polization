@@ -6,7 +6,7 @@
 <link rel="import" href="pz-game-board.html">
 <link rel="import" href="pz-game-civilizations.html">
 <link rel="import" href="pz-game-technology.html">
-<link rel="import" href="josito-pointer-events.html">
+
 
 <dom-module id="pz-game">
 
@@ -19,10 +19,9 @@
     <pz-data game="{{game}}" loading="{{loading}}"></pz-data>
 
     <!--iron-pages-->
-      <!--<pz-game-board board="[[game.board]]" civilizations="[[game.civilizations]]"></pz-game-board>>-->
-      <!--<pz-game-civilizations civilizations="[[game.civilizations]]"></pz-game-civilizations>-->
-      <!--<pz-game-technology></pz-game-technology>-->
-      <josito-pointer-events></josito-pointer-events>
+      <pz-game-board board="[[game.board]]" civilizations="[[game.civilizations]]"></pz-game-board>
+      <pz-game-civilizations civilizations="[[game.civilizations]]"></pz-game-civilizations>
+      <pz-game-technology></pz-game-technology>
     <!---->
 
 
