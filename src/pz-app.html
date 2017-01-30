@@ -17,7 +17,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="pz-category-data.html">
 
-<link rel="import" href="josito-pointer-events2.html">
+<link rel="import" href="jlramosr-drag-element.html">
 
 <link rel="import" href="shared-styles.html">
 
@@ -128,7 +128,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <!-- home view -->
       <!--<pz-home name="home" categories="[[categories]]"></pz-home>-->
       <!--<pz-game name="game"></pz-game>-->
-      <josito-pointer-events2 name="game"></josito-pointer-events2>
+      <jlramosr-drag-element name="game"></jlramosr-drag-element>
       <!-- list of games -->
       <!-- list of friends -->
       <!-- new game -->
@@ -138,11 +138,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </iron-pages>
 
     <!-- Lazy-create the drawer for small screen sizes. -->
-    <template is="dom-if" if="[[_shouldRenderDrawer]]">
-      <!-- Two-way bind `drawerOpened` since app-drawer can update `opened` itself. -->
+    <!--<template is="dom-if" if="[[_shouldRenderDrawer]]">
       <app-drawer opened="{{drawerOpened}}" swipe-open tabindex="0">
       </app-drawer>
-    </template>
+    </template>-->
 
     <!-- Lazy-create the drawer for small screen sizes. -->
     <template is="dom-if" if="[[_shouldRenderFooter]]">
