@@ -5,39 +5,29 @@
   <template>
 
     <style>
-      :hosts {
+      :host {
         display: block;
-      }
-
-      .square {
         width: var(--app-square-size);
         height: var(--app-square-size);
-      }
-
-      .square--invisible {
         background: #333;
-      }
-
-      .square--land {
-        background-image: url("../images/pz-game-square-land.png");
-      }
-
-      .square--sea {
-        background-image: url("../images/pz-game-square-sea.png");
-      }
-
-      .square--active {
-        opacity: 1;
-      }
-
-      .square--inactive {
+        border: 1px solid #000;
         opacity: 0.8;
+      }
+
+      :host([visible][type="land"]) {
+        background: #fff;
+      }
+
+      :host([visible][type="sea"]) {
+        background: #ddd;
+      }
+
+      :host([active]) {
+        opacity: 1;
       }
     </style>
 
-    <div id="square" class$="square square--[[_computeClassType(visible, land, sea)]] square--[[_computeClassActive(active)]]">
-
-    </div>
+    {{positionX}},{{positionY}}
 
   </template>
 
@@ -53,50 +43,33 @@
 
         positionY: Number,
 
+        type: {
+          type: String,
+          reflectToAttribute: true,
+          value: 'land'
+        },
+
         visible: {
           type: Boolean,
+          reflectToAttribute: true,
           value: true
-        },
-
-        land: {
-          type: Boolean,
-          value: true
-        },
-
-        sea: {
-          type: Boolean,
-          value: false
         },
 
         active: {
           type: Boolean,
+          reflectToAttribute: true,
           value: false
         }
 
       },
 
       listeners: {
-        'click': '_click' 
+
       },
 
       observers: [
         
       ],
-
-      _click(event) {
-        console.log("CASILLA");
-      },
-
-      _computeClassType(visible, land, sea) {
-        if (visible && land) return 'land';
-        if (visible && sea) return 'sea';
-        return 'invisible';
-      },
-
-      _computeClassActive(active) {
-        if (active) return 'active';
-        return 'inactive';
-      }
 
     });
 

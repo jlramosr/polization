@@ -17,8 +17,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="pz-category-data.html">
 
-<link rel="import" href="jlramosr-drag-element.html">
-
 <link rel="import" href="shared-styles.html">
 
 <!-- Since 'home' is the default route, eagerly load it. -->
@@ -127,8 +125,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible" fallback-selection="404">
       <!-- home view -->
       <!--<pz-home name="home" categories="[[categories]]"></pz-home>-->
-      <!--<pz-game name="game"></pz-game>-->
-      <jlramosr-drag-element name="game"></jlramosr-drag-element>
+      <pz-game name="game"></pz-game>
       <!-- list of games -->
       <!-- list of friends -->
       <!-- new game -->

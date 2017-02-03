@@ -17,20 +17,41 @@
         display: block;
       }
 
-      .canvas {
-        transform-origin: top left;
+      .universe {
+        display: inline-block;
         position: relative;
+        overflow: auto;
+        touch-action: manipulation; /* pan-x pan-y pinch-zoom */
+        width: 100%;
+        height: 100vh;
+        background: #033;
+        object-fit: cover;
       }
 
-      .board {
+      .world1 {
+        position: absolute;
+      }
+
+      .world {
         @apply(--layout-vertical);
+        display: inline-block; /* these div sizes (width,height) depends on its children */
+        position: relative;
+
+        width: auto;
+        max-width: 100%;
+        height: auto;
+        max-height: 100%;
+        
+        transform-origin: center;
+        border: 1px solid yellow;
+        margin: 10px;
       }
 
-      .board__row {
+      .world__row {
         @apply(--layout-horizontal);
       }
 
-      .pieces {
+      .world__pieces {
         position: absolute;
         left: 0;
         top: 0;
@@ -45,37 +66,39 @@
       </app-toolbar>
     </app-header>
 
-    <div id="container" class="container">
+    <div class="container" id="container">
 
-      <div id="canvas" class="canvas">
+      <div class="universe" id="universe">
+        <div class="world1" id="world1">
+        <div class="world" id="world">
 
-        <div id="board" class="board">
-          <template is="dom-repeat" items="[[board]]" index-as="y">
-            <div class="board__row">
+          <template is="dom-repeat" items="[[world]]" index-as="y">
+            <div class="world__row">
               <template is="dom-repeat" items="[[_getRowSquares(y)]]" as="square" index-as="x">
                 <pz-game-square 
-                  sea="[[square.isSea]]"
-                  land="[[square.isLand]]"
-                  visible="[[square.isVisible]]"
+                  type="[[square.type]]"
+                  visible="[[square.visible]]"
                   position-x="[[x]]"
                   position-y="[[y]]"></pz-game-square>
               </template>
             </div>
           </template>
-        </div>
 
-        <div id="pieces" class="pieces">
-          <template is="dom-repeat" items="[[civilizations]]" as="civilization">
-            <template is="dom-repeat" items="[[civilization.pieces]]" as="piece">
-              <pz-game-piece 
-                type="[[piece.type]]" 
-                position-x="[[piece.positionX]]"
-                position-y="[[piece.positionY]]"
-                user="[[civilization.user]]"
-                color="[[civilization.color]]"
-                movement="[[piece.movement]]"></pz-game-piece>
+          <div class="world__pieces" id="pieces">
+            <template is="dom-repeat" items="[[civilizations]]" as="civilization">
+              <template is="dom-repeat" items="[[civilization.pieces]]" as="piece">
+                <pz-game-piece 
+                  type="[[piece.type]]" 
+                  position-x="[[piece.positionX]]"
+                  position-y="[[piece.positionY]]"
+                  user="[[civilization.user]]"
+                  color="[[civilization.color]]"
+                  movement="[[piece.movement]]"></pz-game-piece>
+              </template>
             </template>
-          </template>
+          </div>
+
+        </div>
         </div>
 
       </div>
@@ -92,7 +115,7 @@
 
       properties: {
 
-        board: Array,
+        world: Array,
 
         civilizations: Array,
 
@@ -110,16 +133,32 @@
       },
 
       listeners: {
-        'wheel': '_onWheelMouse',
-        /* Pieces */
-        'click-piece': '_onClickPiece'
+
+      },
+
+      attached() {
+
+        this.$.universe.addEventListener('pointerdown', this._onPointerDownWorld);
+
+        this.$.universe.addEventListener('wheel', _ => {
+          console.log("_onWheelMouse", this.zoom, event.deltaY);
+          event.preventDefault(); // it prevents all y-axis screen movements
+          if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
+          if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
+        }); //touchmove es el equivalente
+
       },
 
       _getRowSquares(index) {
-        return this.board[index];
+        return this.world[index];
+      },
+
+      _onPointerDownWorld(event) {
+        console.log("_onPointerDownWorld", this.zoom);
       },
 
       _onWheelMouse(event) {
+        console.log("_onWheelMouse", this.zoom, event.deltaY);
         event.preventDefault();
         if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
         if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
@@ -129,7 +168,7 @@
         const pieceClicked = event.detail;
         if (!Boolean(pieceClicked.user)) return;
         const allPieces = Polymer.dom(this.$.pieces).querySelectorAll('pz-game-piece');
-        const allSquares = Polymer.dom(this.$.board).querySelectorAll('pz-game-square');
+        const allSquares = Polymer.dom(this.$.world).querySelectorAll('pz-game-square');
         for (piece of allPieces) {
           if (piece === pieceClicked) {
             pieceClicked.active = true;
@@ -149,17 +188,18 @@
       },
 
       _zoomChanged(zoom, oldZoom) {
+        console.log("_zoomChanged", zoom);
         if (oldZoom) {
           const initialScale = this._zoomToScale(oldZoom);
           const finalScale = this._zoomToScale(zoom);
-          const animation = this.$.canvas.animate([
+          const animation = this.$.world1.animate([
             { 'transform': `scale(${initialScale})` }, 
             { 'transform': `scale(${finalScale})` }
           ], { 
             duration: 100,
           });
           animation.onfinish = _ => {
-            this.$.canvas.style.transform = `scale(${finalScale})`;
+            this.$.world1.style.transform = `scale(${finalScale})`;
           };
         }
       },
