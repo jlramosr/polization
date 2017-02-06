@@ -7,10 +7,7 @@
     <style>
       :host {
         display: block;
-        width: var(--app-square-size);
-        height: var(--app-square-size);
-        background: #333;
-        border: 1px solid #000;
+        background: transparent;
         opacity: 0.8;
       }
 
@@ -38,6 +35,8 @@
       is: 'pz-game-square',
 
       properties: {
+
+        width: Number,
 
         positionX: Number,
 
@@ -70,6 +69,11 @@
       observers: [
         
       ],
+
+      attached() {
+        this.style.width = this.width + 'px';
+        this.style.height = this.width + 'px';
+      }
 
     });
 

@@ -1,43 +1,55 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 
 <dom-module id="pz-game-piece">
 
   <template>
 
     <style>
-      :hosts {
-        display: block;
-      }
-
-      .piece {
-        position:absolute; 
+      :host {
+        display: none;
         width: var(--app-piece-size);
         height: var(--app-piece-size);
+        display: none;
+        opacity: 0.5;
+      }
+
+      :host([user='12345']) {
         cursor: pointer;
       }
 
-      .piece--user {
-        cursor: pointer;
-      }
-
-      .piece--computer{
-        cursor: auto;
-      }
-
-      .piece--active {
+      :host([selected]) {
         opacity: 1;
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
       }
 
-      .piece--inactive {
-        opacity: 0.8;
+      .icon {
+        z-index: 1;
       }
+
+      .spinner {
+        --paper-spinner-stroke-width: 1px;
+        --paper-spinner-color: var(--google-green-500);
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        z-index: 0;
+      }
+
+
 
     </style>
 
-    <iron-icon 
-      class$="piece piece--[[_computeClassActive(active)]] piece--[[_computeClassUser(user)]]" 
-      style$="color:[[color]]; top:[[_getPixelsPosition(positionY)]]px; left:[[_getPixelsPosition(positionX)]]px;"
-      icon$="[[type]]"></iron-icon>
+
+    <div id="pieceContainer">
+      <iron-icon class="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
+      <paper-spinner-lite  class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
+    </div>
+
 
   </template>
 
@@ -49,21 +61,47 @@
 
       properties: {
 
+        width: {
+          type: Number,
+          readOnly: true,
+          value: 24
+        },
+
+        clientX: Number,
+
+        clientY: Number,
+
         positionX: Number,
 
         positionY: Number,
 
-        type: String,
-
-        active: { 
+        /**
+         * It indicates if piece is ready to move.
+         */ 
+        selected: { 
           type: Boolean,
-          value: false 
+          reflectToAttribute: true,
+          value: false
+        },
+
+
+        /**
+         * It indicates if piece is being dragged.
+         */ 
+        dragging: {
+          type: Boolean,
+          reflectToAttribute: true,
+          readOnly: true,
+          value: false
         },
 
         user: {
           type: String,
+          reflectToAttribute: true,
           value: ''
         },
+
+        type: String,
 
         color: String,
 
@@ -71,36 +109,177 @@
 
         defense: Number,
 
-        attack: Number
+        attack: Number,
+
+        /**
+         * Exact pointer position on the BROWSER x-asis when user press with the mouse or touch on object.
+         */ 
+        pointerDownX: {
+          type: Number,
+          readOnly: true,
+        },
+
+        /**
+         * Exact pointer position on the BROWSER y-asis when user press with the mouse or touch on object.
+         */ 
+        pointerDownY: {
+          type: Number,
+          readOnly: true,
+        },
+
+        /**
+         * Last pointer position on the BROWSER x-asis when user is dragging the object.
+         */ 
+        lastPointerDragX: {
+          type: Number,
+          readOnly: true
+        },
+
+        /**
+         * Last pointer position on the BROWSER y-asis when user is dragging the object.
+         */ 
+        lastPointerDragY: {
+          type: Number,
+          readOnly: true
+        }
 
       },
 
       listeners: {
-        'click': '_onClick'
+        'tap': '_onTap'
       },
 
       observers: [
         
       ],
 
-      _onClick(event) {
-        this.fire('click-piece', this);
-      },
-  
-      _getPixelsPosition(position) {
-        const appSquareSize = 72;
-        const appPieceSize = 48;
-        return appSquareSize*position + ((appSquareSize-appPieceSize)/2);
+      behaviors: [
+        Polymer.IronResizableBehavior
+      ],
+
+      created() {
+        this._onIronResize = this._onIronResize.bind(this);
+        this._onKeyDown = this._onKeyDown.bind(this);
       },
 
-      _computeClassActive(active) {
-        if (active) return 'active';
-        return 'inactive';
+      attached() {
+        this._toggleListeners(true);
+        this.move(this.clientX, this.clientY);
+        this.style.display = 'block';
       },
 
-      _computeClassUser(user) {
-        if (Boolean(user)) return 'user';
-        return 'computer';
+      detached() {
+        this._toggleListeners(false);
+      },
+
+      move(x, y) {
+        this.translate3d((y - this.width/2) + 'px', (x - this.width/2) + 'px', 0);
+        this.clientX = x;
+        this.clientY = y;
+      },
+
+      _toggleListeners(enable) {
+        const m = enable ? 'addEventListener' : 'removeEventListener';
+        if(this.allowPointerEvents) {
+          this[m]('pointerdown', this._onPointerDown);
+          this[m]('pointerup', this._onPointerUp);
+          this[m]('pointermove', this._onPointerMove);
+          this[m]('pointerleave', this._onPointerLeave);
+        }
+        else {
+          this[m]('mousedown', this._onPointerDown);
+          this[m]('mouseup', this._onPointerUp);
+          this[m]('mousemove', this._onPointerMove);
+          this[m]('mouseleave', this._onPointerLeave);   
+        }
+        this[m]('iron-resize', this._onIronResize);
+        document.body[m]('keydown', this._onKeyDown);
+      },
+
+      _onIronResize(event) {
+        
+      },
+
+      /**
+       * Fired when the user press the mouse over the object or touch the element.
+       *
+       * It updates pointer down position of the object and initialize the position of the drag.
+       */ 
+      _onPointerDown(event) {
+        this._setPointerDownX(event.clientX);
+        this._setPointerDownY(event.clientY);
+
+        if (this.selected) {
+          this._setDragging(true);
+          this._setLastPointerDragX(event.clientX);
+          this._setLastPointerDragY(event.clientY);
+        }
+      },
+
+      /**
+       * Fired when the user stop clicking or touching the element.
+       *
+       * It's a handler of object selected property. Always set dragging to false, updating the new corner of the object.
+       */ 
+      _onPointerUp(event) {
+        
+        this._setDragging(false);
+
+        const samePositionDown = (event.clientX ==  this.pointerDownX && event.clientY == this.pointerDownY);
+        if (samePositionDown) {
+          this.selected = !this.selected;
+        }
+
+      },
+
+      /**
+       * Fired when the user moves the mouse or finger or pen over the element.
+       *
+       * If the object is being dragged, update its position through the element.
+       */ 
+      _onPointerMove(event) {
+
+        console.log("asdsad", event);
+        
+        if (this.selected && this.dragging) {
+
+            const movementX = event.clientX - this.lastPointerDragX;
+            const movementY = event.clientY - this.lastPointerDragY;
+
+            this._setLastPointerDragX(event.clientX);
+            this._setLastPointerDragY(event.clientY);
+
+            const newClientX = this.clientX + movementX;
+            const newClientY = this.clientY + movementY;
+            
+            this.move(newClientX, newClientY);
+
+        }
+      },
+
+      /**
+       * Fired when user press down a key.
+       */ 
+      _onKeyDown(event) {
+
+        const escKey = 27;
+        const arrowLeftKey = 37;
+        const arrowUpKey = 38;
+        const arrowRightKey = 39;
+        const arrowDownKey = 40;
+        const f5Key = 116;
+
+        if (this.selected) {
+        }
+      },
+
+
+      _onTap(event) {
+        this.fire('tap-piece', this);
+      },
+
+      _computeSpinnerActive(selected, dragging) {
+        return selected && !dragging;
       }
 
     });

@@ -17,44 +17,37 @@
         display: block;
       }
 
-      .universe {
-        display: inline-block;
-        position: relative;
-        overflow: auto;
-        touch-action: manipulation; /* pan-x pan-y pinch-zoom */
+      .container {
         width: 100%;
         height: 100vh;
-        background: #033;
-        object-fit: cover;
       }
 
-      .world1 {
-        position: absolute;
+      .universe {
+        overflow: auto;
+        touch-action: manipulation; /* pan-x pan-y pinch-zoom */
+        min-width: 100%;
+        height: 100%;
+        background: #033;
+        will-change: scroll-position;
       }
 
       .world {
         @apply(--layout-vertical);
         display: inline-block; /* these div sizes (width,height) depends on its children */
+        will-change: transform;
+        transform-origin: top left;
         position: relative;
-
-        width: auto;
-        max-width: 100%;
-        height: auto;
-        max-height: 100%;
-        
-        transform-origin: center;
-        border: 1px solid yellow;
-        margin: 10px;
+        margin: 100px;
       }
 
       .world__row {
         @apply(--layout-horizontal);
       }
 
-      .world__pieces {
+      .world__piece {
         position: absolute;
-        left: 0;
         top: 0;
+        left: 0;
       }
 
     </style>
@@ -69,36 +62,37 @@
     <div class="container" id="container">
 
       <div class="universe" id="universe">
-        <div class="world1" id="world1">
+
         <div class="world" id="world">
 
-          <template is="dom-repeat" items="[[world]]" index-as="y">
-            <div class="world__row">
-              <template is="dom-repeat" items="[[_getRowSquares(y)]]" as="square" index-as="x">
-                <pz-game-square 
-                  type="[[square.type]]"
-                  visible="[[square.visible]]"
-                  position-x="[[x]]"
-                  position-y="[[y]]"></pz-game-square>
-              </template>
-            </div>
-          </template>
+            <template is="dom-repeat" items="[[world]]" index-as="x">
+              <div class="world__row">
+                <template is="dom-repeat" items="[[_getRowSquares(x)]]" as="square" index-as="y">
+                  <pz-game-square 
+                    width="[[squareWidth]]"
+                    type="[[square.type]]"
+                    visible="[[square.visible]]"
+                    position-x="[[x]]"
+                    position-y="[[y]]"></pz-game-square>
+                </template>
+              </div>
+            </template>
 
-          <div class="world__pieces" id="pieces">
             <template is="dom-repeat" items="[[civilizations]]" as="civilization">
               <template is="dom-repeat" items="[[civilization.pieces]]" as="piece">
-                <pz-game-piece 
-                  type="[[piece.type]]" 
+                <pz-game-piece
+                  class="world__piece"
+                  type="[[piece.type]]"
                   position-x="[[piece.positionX]]"
                   position-y="[[piece.positionY]]"
+                  client-x="[[_getClientCoordinate(piece.positionX)]]"
+                  client-y="[[_getClientCoordinate(piece.positionY)]]"
                   user="[[civilization.user]]"
                   color="[[civilization.color]]"
                   movement="[[piece.movement]]"></pz-game-piece>
               </template>
             </template>
-          </div>
 
-        </div>
         </div>
 
       </div>
@@ -119,6 +113,12 @@
 
         civilizations: Array,
 
+        squareWidth: {
+          type: Number,
+          readOnly: true,
+          value: 72
+        },
+
         zoom: {
           type: Number,
           value: 4,
@@ -133,15 +133,14 @@
       },
 
       listeners: {
-
+        'tap-piece': '_onTapPiece'
       },
 
       attached() {
 
-        this.$.universe.addEventListener('pointerdown', this._onPointerDownWorld);
+        this.$.universe.addEventListener('pointerdown', this._onPointerDownUniverse);
 
         this.$.universe.addEventListener('wheel', _ => {
-          console.log("_onWheelMouse", this.zoom, event.deltaY);
           event.preventDefault(); // it prevents all y-axis screen movements
           if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
           if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
@@ -153,55 +152,51 @@
         return this.world[index];
       },
 
-      _onPointerDownWorld(event) {
-        console.log("_onPointerDownWorld", this.zoom);
+      _onPointerDownUniverse(event) {
       },
 
       _onWheelMouse(event) {
-        console.log("_onWheelMouse", this.zoom, event.deltaY);
         event.preventDefault();
         if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
         if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
       },
 
-      _onClickPiece(event) {
-        const pieceClicked = event.detail;
-        if (!Boolean(pieceClicked.user)) return;
-        const allPieces = Polymer.dom(this.$.pieces).querySelectorAll('pz-game-piece');
+      _onTapPiece(event) {
+        const tappedPiece = event.detail;
+        if (!Boolean(tappedPiece.user)) return;
+        const allPieces = Polymer.dom(this.$.world).querySelectorAll('pz-game-piece');
         const allSquares = Polymer.dom(this.$.world).querySelectorAll('pz-game-square');
         for (piece of allPieces) {
-          if (piece === pieceClicked) {
-            pieceClicked.active = true;
-            for (square of allSquares) {
-              if (this._isNear(square, pieceClicked, pieceClicked.movement)) {
-                square.active = true;
-              }
-              else {
-                square.active = false;
-              }
-            }
+          if (piece !== tappedPiece) {
+            piece.active = false;
           }
           else {
-            piece.active = false;
+            tappedPiece.active = true;
+            for (square of allSquares) {
+              square.active = this._isNear(square, tappedPiece, tappedPiece.movement);
+            }  
           }     
         }
       },
 
       _zoomChanged(zoom, oldZoom) {
-        console.log("_zoomChanged", zoom);
         if (oldZoom) {
           const initialScale = this._zoomToScale(oldZoom);
           const finalScale = this._zoomToScale(zoom);
-          const animation = this.$.world1.animate([
+          const animation = this.$.world.animate([
             { 'transform': `scale(${initialScale})` }, 
             { 'transform': `scale(${finalScale})` }
           ], { 
             duration: 100,
           });
           animation.onfinish = _ => {
-            this.$.world1.style.transform = `scale(${finalScale})`;
+            this.$.world.style.transform = `scale(${finalScale})`;
           };
         }
+      },
+
+      _getClientCoordinate(position) {
+        return this.squareWidth * (position + 0.5);
       },
 
       /**

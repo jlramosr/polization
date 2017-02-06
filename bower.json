@@ -19,7 +19,7 @@
     "iron-pages": "polymerelements/iron-pages#^1.0.0",
     "iron-selector": "polymerelements/iron-selector#^1.0.0",
     "paper-icon-button": "polymerelements/paper-icon-button#^1.0.0",
-    "paper-spinner": "polymerelements/paper-spinner#^1.0.0",
+    "paper-spinner": "PolymerElements/paper-spinner#^1.2.1",
     "iron-list": "PolymerElements/iron-list#^1.4.0"
   },
   "devDependencies": {
