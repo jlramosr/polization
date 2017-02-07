@@ -5,6 +5,7 @@
   <script>
   (function() {
     var game = {
+      "turn": "12345",
       "board": [
         [
           {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
@@ -39,13 +40,13 @@
       ],
       "civilizations": [
         {"name": "Spain", "color": "red", "user": "12345", "pieces": [
-          {"type": "explorer", "positionX": 3, "positionY": 5, "movement": 2 },
-          {"type": "spearman", "positionX": 1, "positionY": 1, "movement": 1 },
+          {"type": "explorer", "positionX": 0, "positionY": 0, "maxMovements": 2, "restMovements": 2 },
+          {"type": "spearman", "positionX": 4, "positionY": 5, "maxMovements": 1, "restMovements": 1 },
         ]},
-        {"name": "England", "color": "blue", "user": "", "pieces": [
-          {"type": "spearman", "positionX": 3, "positionY": 0, "movement": 1  },
-          {"type": "explorer", "positionX": 5, "positionY": 2, "movement": 2  },
-          {"type": "spearman", "positionX": 1, "positionY": 3, "movement": 1  },
+        {"name": "England", "color": "blue", "user": "12346", "pieces": [
+          {"type": "spearman", "positionX": 3, "positionY": 0, "maxMovements": 1, "restMovements": 1 },
+          {"type": "explorer", "positionX": 5, "positionY": 2, "maxMovements": 2, "restMovements": 2 },
+          {"type": "spearman", "positionX": 1, "positionY": 3, "maxMovements": 1, "restMovements": 1 },
         ]},
       ]
     };

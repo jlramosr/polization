@@ -8,7 +8,7 @@
       :host {
         display: block;
         background: transparent;
-        opacity: 0.8;
+        opacity: 0.6;
       }
 
       :host([visible][type="land"]) {
@@ -20,6 +20,10 @@
       }
 
       :host([active]) {
+        opacity: 0.8;
+      }
+
+      :host([highlited]) {
         opacity: 1;
       }
     </style>
@@ -38,7 +42,11 @@
 
         width: Number,
 
-        positionX: Number,
+        positionX: {
+          type: Number,
+          reflectToAttribute: true,
+          value: 45
+        },
 
         positionY: Number,
 
@@ -58,17 +66,14 @@
           type: Boolean,
           reflectToAttribute: true,
           value: false
+        },
+
+        highlited: {
+          type: Boolean,
+          reflectToAttribute: true,
+          value: false
         }
-
       },
-
-      listeners: {
-
-      },
-
-      observers: [
-        
-      ],
 
       attached() {
         this.style.width = this.width + 'px';

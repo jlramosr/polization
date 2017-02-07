@@ -65,10 +65,11 @@
 
         <div class="world" id="world">
 
-            <template is="dom-repeat" items="[[world]]" index-as="x">
+            <template is="dom-repeat" items="[[world]]" index-as="y">
               <div class="world__row">
-                <template is="dom-repeat" items="[[_getRowSquares(x)]]" as="square" index-as="y">
-                  <pz-game-square 
+                <template is="dom-repeat" items="[[_getRowSquares(y)]]" as="square" index-as="x">
+                  <pz-game-square
+                    id="square[[x]][[y]]"
                     width="[[squareWidth]]"
                     type="[[square.type]]"
                     visible="[[square.visible]]"
@@ -82,14 +83,16 @@
               <template is="dom-repeat" items="[[civilization.pieces]]" as="piece">
                 <pz-game-piece
                   class="world__piece"
+                  square-width="[[squareWidth]]"
+                  mine="[[_isMine(civilization.user)]]"
+                  is-my-turn="[[_isMine(turnUser)]]"
                   type="[[piece.type]]"
                   position-x="[[piece.positionX]]"
                   position-y="[[piece.positionY]]"
-                  client-x="[[_getClientCoordinate(piece.positionX)]]"
-                  client-y="[[_getClientCoordinate(piece.positionY)]]"
                   user="[[civilization.user]]"
                   color="[[civilization.color]]"
-                  movement="[[piece.movement]]"></pz-game-piece>
+                  max-movements="[[piece.maxMovements]]"
+                  rest-movements="[[piece.restMovements]]"></pz-game-piece>
               </template>
             </template>
 
@@ -113,6 +116,18 @@
 
         civilizations: Array,
 
+        turnUser: Boolean,
+
+        squareActive: { 
+          type: Object,
+          readOnly: true,
+        },
+
+        pieceActive: { 
+          type: Object,
+          readOnly: true,
+        },
+
         squareWidth: {
           type: Number,
           readOnly: true,
@@ -133,7 +148,9 @@
       },
 
       listeners: {
-        'tap-piece': '_onTapPiece'
+        'piece-selected': '_onPieceSelected',
+        'piece-dragging': '_onPieceDragging',
+        'piece-finish-drag': '_onPieceFinishDrag'
       },
 
       attached() {
@@ -145,6 +162,9 @@
           if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
           if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
         }); //touchmove es el equivalente
+
+        //si es mi turno 
+        //Polymer.dom(this.$.world).querySelector('pz-game-piece').selected = true;
 
       },
 
@@ -161,23 +181,56 @@
         if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
       },
 
-      _onTapPiece(event) {
-        const tappedPiece = event.detail;
-        if (!Boolean(tappedPiece.user)) return;
-        const allPieces = Polymer.dom(this.$.world).querySelectorAll('pz-game-piece');
-        const allSquares = Polymer.dom(this.$.world).querySelectorAll('pz-game-square');
-        for (piece of allPieces) {
-          if (piece !== tappedPiece) {
-            piece.active = false;
-          }
-          else {
-            tappedPiece.active = true;
-            for (square of allSquares) {
-              square.active = this._isNear(square, tappedPiece, tappedPiece.movement);
-            }  
-          }     
-        }
+      _onPieceSelected(event) {
+        const piece = event.detail;
+        this._changePieceActive(piece);
+        this._activeNearestSquares(piece);
       },
+
+      _onPieceDragging(event) {
+        const piece = event.detail;
+
+        const clientX = piece.clientX;
+        const clientY = piece.clientY;
+
+        const dragPositionX = piece._getCoordinatePosition(clientX);
+        const dragPositionY = piece._getCoordinatePosition(clientY);
+
+        this._changeSquareActive(dragPositionX, dragPositionY);
+      },
+
+      _onPieceFinishDrag(event) {
+        const piece = event.detail;
+
+        const clientX = piece.clientX;
+        const clientY = piece.clientY;
+
+        const oldPositionX = piece.positionX;
+        const oldPositionY = piece.positionY;
+
+        const newPositionX = piece._getCoordinatePosition(clientX);
+        const newPositionY = piece._getCoordinatePosition(clientY); 
+
+
+        if (oldPositionX != newPositionX || oldPositionY != newPositionY) {
+          const movementX = Math.abs(oldPositionX - newPositionX);
+          const movementY = Math.abs(oldPositionY - newPositionY);
+          const restMovements = piece.restMovements;
+          
+          if (movementX <= restMovements && movementY <= restMovements) {
+
+            piece.positionX = newPositionX;
+            piece.positionY = newPositionY;
+            piece.restMovements -= Math.max(movementX, movementY);
+
+          }
+        }
+        
+        this._changeSquareActive();
+      },
+
+
+
 
       _zoomChanged(zoom, oldZoom) {
         if (oldZoom) {
@@ -195,8 +248,39 @@
         }
       },
 
-      _getClientCoordinate(position) {
-        return this.squareWidth * (position + 0.5);
+
+
+
+      _changeSquareActive(positionX, positionY) {
+        const squareActive = this.squareActive;
+        if (positionX == undefined || !positionY == undefined) {
+          if (squareActive) squareActive.highlited = false;
+          return;
+        }
+        const square = Polymer.dom(this.$.world).querySelector(`#square${positionX}${positionY}`);
+        if (squareActive && squareActive != square) {
+          squareActive.highlited = false;
+        }
+        if (!squareActive || squareActive != square) {
+          this._setSquareActive(square);
+          square.highlited = true;
+        }
+      },
+
+      _changePieceActive(piece) {
+        if (this.pieceActive && this.pieceActive != piece) {
+          this.pieceActive.selected = false;
+        }
+        if (!this.PieceActive || this.pieceActive != piece) {
+          this._setPieceActive(piece);
+        }
+      },
+
+      _activeNearestSquares(piece) {
+        const allSquares = Polymer.dom(this.$.world).querySelectorAll('pz-game-square');
+        for (square of allSquares) {
+          square.active = this._isNear(square, piece, piece.restMovements);
+        } 
       },
 
       /**
@@ -224,6 +308,10 @@
         return Boolean(numberSquares) &&
                Math.abs(square1.positionX - square2.positionX) <= numberSquares &&
                Math.abs(square1.positionY - square2.positionY) <= numberSquares;
+      },
+
+      _isMine(user) {
+        return user == '12345';
       },
 
       _visibleChanged(visible) {

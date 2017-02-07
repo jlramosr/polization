@@ -14,7 +14,7 @@
         opacity: 0.5;
       }
 
-      :host([user='12345']) {
+      :host([is-my-turn][mine]:not([selected]):not([rest-movements="0"])) {
         cursor: pointer;
       }
 
@@ -30,7 +30,7 @@
       }
 
       .spinner {
-        --paper-spinner-stroke-width: 1px;
+        --paper-spinner-stroke-width: 6px;
         --paper-spinner-color: var(--google-green-500);
         position: absolute;
         top: -2px;
@@ -40,14 +40,24 @@
         z-index: 0;
       }
 
-
+      .info {
+        position: absolute;
+        font-size: 12px;
+        right: -5px;
+        bottom: -5px;
+        font-weight: bold;
+        z-index: 2;
+      }
 
     </style>
 
 
     <div id="pieceContainer">
       <iron-icon class="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
-      <paper-spinner-lite  class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
+      <paper-spinner-lite class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
+      <template is="dom-if" if="[[mine]]">
+        <span style$="color:[[color]];" class="info">{{restMovements}}</span>
+      </template>
     </div>
 
 
@@ -67,6 +77,8 @@
           value: 24
         },
 
+        squareWidth: Number,
+
         clientX: Number,
 
         clientY: Number,
@@ -81,7 +93,8 @@
         selected: { 
           type: Boolean,
           reflectToAttribute: true,
-          value: false
+          value: false,
+          observer: '_selectedChanged'
         },
 
 
@@ -97,15 +110,30 @@
 
         user: {
           type: String,
-          reflectToAttribute: true,
           value: ''
+        },
+
+        isMyTurn: { 
+          type: Boolean,
+          reflectToAttribute: true,
+        },
+
+        mine: { 
+          type: Boolean,
+          reflectToAttribute: true,
         },
 
         type: String,
 
         color: String,
 
-        movement: Number,
+        maxMovements: Number,
+
+        restMovements: {
+          type: Number,
+          observer: '_restMovementsChanged',
+          reflectToAttribute: true
+        },
 
         defense: Number,
 
@@ -145,17 +173,17 @@
 
       },
 
-      listeners: {
-        'tap': '_onTap'
-      },
-
       observers: [
-        
+        '_positionChanged(positionX, positionY, squareWidth)'
       ],
 
       behaviors: [
         Polymer.IronResizableBehavior
       ],
+
+
+
+
 
       created() {
         this._onIronResize = this._onIronResize.bind(this);
@@ -164,7 +192,6 @@
 
       attached() {
         this._toggleListeners(true);
-        this.move(this.clientX, this.clientY);
         this.style.display = 'block';
       },
 
@@ -172,48 +199,73 @@
         this._toggleListeners(false);
       },
 
-      move(x, y) {
-        this.translate3d((y - this.width/2) + 'px', (x - this.width/2) + 'px', 0);
-        this.clientX = x;
-        this.clientY = y;
-      },
-
       _toggleListeners(enable) {
         const m = enable ? 'addEventListener' : 'removeEventListener';
-        if(this.allowPointerEvents) {
+        if (this.mine) {
           this[m]('pointerdown', this._onPointerDown);
           this[m]('pointerup', this._onPointerUp);
           this[m]('pointermove', this._onPointerMove);
           this[m]('pointerleave', this._onPointerLeave);
-        }
-        else {
-          this[m]('mousedown', this._onPointerDown);
-          this[m]('mouseup', this._onPointerUp);
-          this[m]('mousemove', this._onPointerMove);
-          this[m]('mouseleave', this._onPointerLeave);   
-        }
+        }  
         this[m]('iron-resize', this._onIronResize);
         document.body[m]('keydown', this._onKeyDown);
       },
+
+
+
+
+
+      _positionChanged(positionX, positionY, squareWidth) {
+        this._moveToClient(this._getCoordinateClient(positionX), this._getCoordinateClient(positionY));
+      },
+
+
+      _restMovementsChanged(restMovements) {
+        if (!restMovements) {
+          this._setDragging(false);
+          this.selected = false;
+        }
+      },
+
+      _selectedChanged(selected) {
+        if (selected) {
+          this.fire('piece-selected', this);
+        }
+      },
+
+
+
+
+  
 
       _onIronResize(event) {
         
       },
 
+
       /**
-       * Fired when the user press the mouse over the object or touch the element.
+       * Fired when the user press the mouse over the piece or touch the element.
        *
-       * It updates pointer down position of the object and initialize the position of the drag.
+       * It updates pointer down position of the piece and initialize the position of the drag.
        */ 
       _onPointerDown(event) {
-        this._setPointerDownX(event.clientX);
-        this._setPointerDownY(event.clientY);
 
-        if (this.selected) {
-          this._setDragging(true);
-          this._setLastPointerDragX(event.clientX);
-          this._setLastPointerDragY(event.clientY);
+        if (this.isMyTurn && this.restMovements > 0) {
+
+          const pointerX = event.clientX;
+          const pointerY = event.clientY;
+
+          this._setPointerDownX(pointerX);
+          this._setPointerDownY(pointerY);
+
+          if (this.selected) {
+            this._setDragging(true);
+            this._setLastPointerDragX(pointerX);
+            this._setLastPointerDragY(pointerY);
+          }
+
         }
+
       },
 
       /**
@@ -222,12 +274,23 @@
        * It's a handler of object selected property. Always set dragging to false, updating the new corner of the object.
        */ 
       _onPointerUp(event) {
-        
-        this._setDragging(false);
 
-        const samePositionDown = (event.clientX ==  this.pointerDownX && event.clientY == this.pointerDownY);
-        if (samePositionDown) {
-          this.selected = !this.selected;
+        if (this.isMyTurn && this.restMovements > 0) {
+
+          const pointerX = event.clientX;
+          const pointerY = event.clientY;
+
+          const samePositionDown = (pointerX ==  this.pointerDownX && pointerY == this.pointerDownY);
+          if (samePositionDown) {
+            this.selected = !this.selected;
+          }
+
+          if (this.dragging && !samePositionDown) {
+            this.fire('piece-finish-drag', this);
+          }
+
+          this._setDragging(false);
+
         }
 
       },
@@ -238,23 +301,26 @@
        * If the object is being dragged, update its position through the element.
        */ 
       _onPointerMove(event) {
-
-        console.log("asdsad", event);
         
         if (this.selected && this.dragging) {
 
-            const movementX = event.clientX - this.lastPointerDragX;
-            const movementY = event.clientY - this.lastPointerDragY;
+            const pointerX = event.clientX;
+            const pointerY = event.clientY;
+            
+            const movementX = pointerX - this.lastPointerDragX;
+            const movementY = pointerY - this.lastPointerDragY;
 
-            this._setLastPointerDragX(event.clientX);
-            this._setLastPointerDragY(event.clientY);
+            this._setLastPointerDragX(pointerX);
+            this._setLastPointerDragY(pointerY);
 
             const newClientX = this.clientX + movementX;
             const newClientY = this.clientY + movementY;
-            
-            this.move(newClientX, newClientY);
+
+            this._moveToClient(newClientX, newClientY);
+            this.fire('piece-dragging', this);
 
         }
+
       },
 
       /**
@@ -271,12 +337,35 @@
 
         if (this.selected) {
         }
+
       },
 
 
-      _onTap(event) {
-        this.fire('tap-piece', this);
+
+
+      _moveToClient(clientX, clientY) {
+        const centerClientX = (clientX - this.width/2);
+        const centerClientY = (clientY - this.width/2);
+
+        this.translate3d(centerClientX + 'px', centerClientY + 'px', 0);
+
+        this.clientX = clientX;
+        this.clientY = clientY;
       },
+
+      _getCoordinatePosition(coordinateClient) {
+        const positionDecimal = coordinateClient / this.squareWidth;
+        return Math.trunc(positionDecimal);
+      },
+
+      _getCoordinateClient(coordinatePosition) {
+        return this.squareWidth * (coordinatePosition + 0.5);
+      },
+
+
+
+
+
 
       _computeSpinnerActive(selected, dragging) {
         return selected && !dragging;
