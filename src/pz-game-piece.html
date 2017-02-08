@@ -8,13 +8,11 @@
     <style>
       :host {
         display: none;
-        width: var(--app-piece-size);
-        height: var(--app-piece-size);
         display: none;
         opacity: 0.5;
       }
 
-      :host([is-my-turn][mine]:not([selected]):not([rest-movements="0"])) {
+      :host([allow-movement]:not([selected])) {
         cursor: pointer;
       }
 
@@ -43,20 +41,38 @@
       .info {
         position: absolute;
         font-size: 12px;
+        font-weight: 800;
+        z-index: 2;
+      }
+
+      .info__movement {
         right: -5px;
         bottom: -5px;
-        font-weight: bold;
-        z-index: 2;
+        color: #a00;
+      }
+
+      .info__attack {
+        left: -5px;
+        top: -5px;
+        color: #050;
+      }
+
+      .info__defense {
+        right: -5px;
+        top: -5px;
+        color: #00a;
       }
 
     </style>
 
 
     <div id="pieceContainer">
-      <iron-icon class="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
+      <iron-icon class="icon" id="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
       <paper-spinner-lite class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
-      <template is="dom-if" if="[[mine]]">
-        <span style$="color:[[color]];" class="info">{{restMovements}}</span>
+      <template is="dom-if" if="[[selected]]">
+        <span class="info info__movement">{{movement}}</span>
+        <span class="info info__attack">{{attack}}</span>
+        <span class="info info__defense">{{defense}}</span>
       </template>
     </div>
 
@@ -74,14 +90,27 @@
         width: {
           type: Number,
           readOnly: true,
-          value: 24
+          value: 32
         },
+
+        appUser: {
+          type: String,
+          value: ''
+        },
+
+        turn: String,
 
         squareWidth: Number,
 
-        clientX: Number,
+        clientX: { 
+          type: Number,
+          readOnly: true
+        },
 
-        clientY: Number,
+        clientY:  { 
+          type: Number,
+          readOnly: true
+        },
 
         positionX: Number,
 
@@ -93,8 +122,7 @@
         selected: { 
           type: Boolean,
           reflectToAttribute: true,
-          value: false,
-          observer: '_selectedChanged'
+          value: false
         },
 
 
@@ -103,41 +131,38 @@
          */ 
         dragging: {
           type: Boolean,
-          reflectToAttribute: true,
           readOnly: true,
           value: false
         },
 
         user: {
           type: String,
-          value: ''
-        },
-
-        isMyTurn: { 
-          type: Boolean,
-          reflectToAttribute: true,
-        },
-
-        mine: { 
-          type: Boolean,
-          reflectToAttribute: true,
+          value: '',
+          reflectToAttribute: true
         },
 
         type: String,
 
         color: String,
 
-        maxMovements: Number,
+        maxMovement: Number,
 
-        restMovements: {
+        movement: {
           type: Number,
-          observer: '_restMovementsChanged',
-          reflectToAttribute: true
+          observer: '_movementChanged'
         },
 
-        defense: Number,
+        maxAttack: Number,
 
-        attack: Number,
+        attack: {
+          type: Number,
+        },
+
+        maxDefense: Number,
+
+        defense: {
+          type: Number,
+        },  
 
         /**
          * Exact pointer position on the BROWSER x-asis when user press with the mouse or touch on object.
@@ -169,11 +194,18 @@
         lastPointerDragY: {
           type: Number,
           readOnly: true
+        },
+
+        allowMovement: {
+          type: Boolean,
+          computed: '_computeAllowMovement(appUser, turn, user, movement)',
+          reflectToAttribute: true
         }
 
       },
 
       observers: [
+        '_selectedChanged(selected, appUser, user)',
         '_positionChanged(positionX, positionY, squareWidth)'
       ],
 
@@ -193,6 +225,8 @@
       attached() {
         this._toggleListeners(true);
         this.style.display = 'block';
+        this.$.icon.style.width = this.width + 'px';
+        this.$.icon.style.height = this.width + 'px';
       },
 
       detached() {
@@ -201,7 +235,7 @@
 
       _toggleListeners(enable) {
         const m = enable ? 'addEventListener' : 'removeEventListener';
-        if (this.mine) {
+        if (this.user == this.appUser) {
           this[m]('pointerdown', this._onPointerDown);
           this[m]('pointerup', this._onPointerUp);
           this[m]('pointermove', this._onPointerMove);
@@ -211,27 +245,30 @@
         document.body[m]('keydown', this._onKeyDown);
       },
 
+      moveToPosition(x, y) {
+        this._moveToClient(this._getCoordinateClient(x), this._getCoordinateClient(y));
+      },
 
 
 
+      _selectedChanged(selected, appUser, user) {
+        /*if (selected) {
+          if (this.appUser != this.user) this.selected = false;
+          this.fire('piece-selected', this);
+        }*/
+      },
 
       _positionChanged(positionX, positionY, squareWidth) {
-        this._moveToClient(this._getCoordinateClient(positionX), this._getCoordinateClient(positionY));
+        this.moveToPosition(positionX, positionY);
       },
 
-
-      _restMovementsChanged(restMovements) {
-        if (!restMovements) {
+      _movementChanged(movement) {
+        if (!movement) {
           this._setDragging(false);
-          this.selected = false;
+          this.fire('piece-without-movement', this);
         }
       },
 
-      _selectedChanged(selected) {
-        if (selected) {
-          this.fire('piece-selected', this);
-        }
-      },
 
 
 
@@ -250,7 +287,7 @@
        */ 
       _onPointerDown(event) {
 
-        if (this.isMyTurn && this.restMovements > 0) {
+        if (this.allowMovement) {
 
           const pointerX = event.clientX;
           const pointerY = event.clientY;
@@ -275,14 +312,15 @@
        */ 
       _onPointerUp(event) {
 
-        if (this.isMyTurn && this.restMovements > 0) {
+        if (this.allowMovement) {
 
           const pointerX = event.clientX;
           const pointerY = event.clientY;
 
           const samePositionDown = (pointerX ==  this.pointerDownX && pointerY == this.pointerDownY);
           if (samePositionDown) {
-            this.selected = !this.selected;
+            this.fire(this.selected ? 'piece-deselected' : 'piece-selected', this);
+            //this.selected = !this.selected;
           }
 
           if (this.dragging && !samePositionDown) {
@@ -349,8 +387,8 @@
 
         this.translate3d(centerClientX + 'px', centerClientY + 'px', 0);
 
-        this.clientX = clientX;
-        this.clientY = clientY;
+        this._setClientX(clientX);
+        this._setClientY(clientY);
       },
 
       _getCoordinatePosition(coordinateClient) {
@@ -365,11 +403,19 @@
 
 
 
+      _computeAllowMovement(appUser, turn, user, movement) {
+        return user == appUser && user == turn && movement > 0;
+      },
+
+
+
 
 
       _computeSpinnerActive(selected, dragging) {
         return selected && !dragging;
       }
+
+
 
     });
 
