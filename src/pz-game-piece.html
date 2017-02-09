@@ -112,9 +112,15 @@
           readOnly: true
         },
 
-        positionX: Number,
+        positionX: {
+          type: Number,
+          notify: true
+        },
 
-        positionY: Number,
+        positionY: {
+          type: Number,
+          notify: true
+        },
 
         /**
          * It indicates if piece is ready to move.
@@ -205,8 +211,6 @@
       },
 
       observers: [
-        '_selectedChanged(selected, appUser, user)',
-        '_positionChanged(positionX, positionY, squareWidth)'
       ],
 
       behaviors: [
@@ -227,6 +231,8 @@
         this.style.display = 'block';
         this.$.icon.style.width = this.width + 'px';
         this.$.icon.style.height = this.width + 'px';
+        this._moveToClient(this._getCoordinateClient(this.positionX), 
+                           this._getCoordinateClient(this.positionY));
       },
 
       detached() {
@@ -247,20 +253,15 @@
 
       moveToPosition(x, y) {
         this._moveToClient(this._getCoordinateClient(x), this._getCoordinateClient(y));
+        this.positionX = x;
+        this.positionY = y;
       },
 
 
 
-      _selectedChanged(selected, appUser, user) {
-        /*if (selected) {
-          if (this.appUser != this.user) this.selected = false;
-          this.fire('piece-selected', this);
-        }*/
-      },
 
-      _positionChanged(positionX, positionY, squareWidth) {
-        this.moveToPosition(positionX, positionY);
-      },
+
+
 
       _movementChanged(movement) {
         if (!movement) {

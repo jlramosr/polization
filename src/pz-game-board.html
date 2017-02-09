@@ -79,8 +79,8 @@
               </div>
             </template>
 
-            <template is="dom-repeat" items="[[civilizations]]" as="civilization">
-              <template id="piecesRepeatTemplate" is="dom-repeat" items="[[civilization.pieces]]" as="piece">
+            <template is="dom-repeat" items="{{civilizations}}" as="civilization">
+              <template id="piecesRepeatTemplate" is="dom-repeat" items="{{civilization.pieces}}" as="piece">
                 <pz-game-piece
                   class="world__piece"
                   square-width="[[squareWidth]]"
@@ -88,8 +88,8 @@
                   turn="[[turn]]"
                   selected="[[piece.selected]]"
                   type="[[piece.type]]"
-                  position-x="[[piece.positionX]]"
-                  position-y="[[piece.positionY]]"
+                  position-x="{{piece.positionX}}"
+                  position-y="{{piece.positionY}}"
                   user="[[civilization.user]]"
                   color="[[civilization.color]]"
                   max-movement="[[piece.maxMovement]]"
@@ -116,6 +116,13 @@
       is: 'pz-game-board',
 
       properties: {
+
+        board: {
+          type: Array,
+          value: _ => {
+            return [];
+          }
+        },
 
         world: Array,
 
@@ -147,6 +154,11 @@
 
       },
 
+      observers: [
+        '_initializeBoard(world.*, civilizations.*)',
+        '_recordActionBoard(civilizations.*)',
+      ],
+
       listeners: {
         'piece-selected': '_onPieceSelected',
         'piece-deselected': '_onPieceDeselected',
@@ -155,8 +167,11 @@
         'piece-finish-drag': '_onPieceFinishDrag'
       },
 
+
       attached() {
 
+        //this.$.world.addEventListener('dom-change', this._onDomChangeWorld);
+        
         this.$.universe.addEventListener('pointerdown', this._onPointerDownUniverse);
 
         this.$.universe.addEventListener('wheel', _ => {
@@ -167,12 +182,68 @@
 
       },
 
+      _initializeBoard(worldRecord, civsRecord) {
+        //https://www.polymer-project.org/1.0/docs/devguide/observers#deep-observation
+
+        const civsPath = civsRecord.path;
+        const worldPath = worldRecord.path;
+        const civs = civsRecord.value;
+        const world = worldRecord.value;
+
+        if (civsPath === 'civilizations' && worldPath === 'world') {
+
+          //board[x][y] = { owner:'' , items: [] }. In this items array will go all items (pieces, cities, ...) of the square (x,y)
+          world.forEach((row, y) => {
+            for (x in world[y]) {
+              if (y == 0) {
+                this.push('board', []);
+              }
+              const boardSquareInfo = { 'owner':'', 'items': [] };
+              this.push(`board.${x}`, boardSquareInfo)
+            }
+          });
+
+          //fill boards[x][y]
+          civs.forEach(civ => {
+            civ.pieces.forEach(piece => {
+              this.push(`board.${piece.positionX}.${piece.positionY}.items`, piece);
+              this.board[piece.positionX][piece.positionY].owner = civ.user;
+            });
+          });
+        }
+      },
+
+      _recordActionBoard(civsRecord) {
+        //https://www.polymer-project.org/1.0/docs/devguide/observers#deep-observation
+
+        const path = civsRecord.path; //civilizations.#1.pieces.#0.positionX
+        const value = civsRecord.value;
+        
+        const piecesSubpath = path.indexOf('.pieces');
+        if (piecesSubpath >= 0) {
+          //there is a change relative to pieces
+          console.log("there is a change relative to pieces");
+          const civPath = path.substring(0, piecesSubpath);
+          const civ = this.get(civPath);
+
+          const positionXPath = path.indexOf('.positionX');
+          const positionYPath = path.indexOf('.positionY');
+          if (positionXPath >= 0 || positionYPath >= 0) {
+            //there is a change relative to a piece position
+            console.log("there is a change relative to a piece position", positionXPath, positionYPath);
+            const piecePath = path.substring(0, positionXPath) || path.substring(0, positionYPath); 
+            const piece = this.get(piecePath);
+          }
+          
+        }
+      },
+
       _getRowSquares(index) {
         return this.world[index];
       },
 
       _onDomChangeWorld(event) {
-        Polymer.dom(this).querySelector('#piecesRepeatTemplate').addEventListener('dom-change', ev => {
+        Polymer.dom(this).querySelector('#piecesRepeatTemplate').addEventListener('onReady', ev => {
         });
       },
 
@@ -243,25 +314,69 @@
       },
 
       _movePiece(piece, oldX, oldY, newX, newY) {
-        if (oldX != newX || oldY != newY) {
+        const movementX = Math.abs(oldX - newX);
+        const movementY = Math.abs(oldY - newY);
+        if (movementX || movementY) {
           //piece has changed of square
-          const movementX = Math.abs(oldX - newX);
-          const movementY = Math.abs(oldY - newY);
           const pieceMovement = piece.movement;
           if (movementX <= pieceMovement && movementY <= pieceMovement) {
             //piece has enough movements
-            //TO DO: ATTACK AND DEFENSE
-            piece.positionX = newX;
-            piece.positionY = newY;
-            piece.movement -= Math.max(movementX, movementY);
+            /* 
+             * 1. Square is ocuppied
+             *  1.1. It's ocuppied by a piece of mine
+             *  1.2. It's ocuppied by the opponent
+             *    1.2.1. It's a piece
+             *    1.2.2. It's a city
+             * 2. Square is empty
+             *  2.1. The movement is not possible (i.e.sea square for land piece)
+             *  2.2. The movement is possible
+             */
+            const squareOwner = this._getSquareOwner(newX, newY);
+            if (squareOwner) {
+              //1
+              if (this.appUser == squareOwner) {
+                //1.1
+
+                piece.moveToPosition(oldX, oldY);
+                console.log("ES MIAAAAA");
+              }
+              else {
+                //1.2
+                piece.moveToPosition(oldX, oldY);
+                console.log("ATAQUEEEEEEEEEEEEEEEEEEEEE!!!!");
+              }
+            }
+            else {
+              //2.2
+              piece.moveToPosition(newX, newY);
+              console.log(this.board[0][0].items);
+
+              this.push(`board.${newX}.${newY}.items`, piece);
+              this.board[newX][newY].owner = this.appUser;
+
+              const index = this.board[oldX][oldY].items.indexOf(piece);
+              this.splice(`board.${oldX}.${oldY}.items`, index, 1);
+              this.board[oldX][oldY].owner = "";
+              
+              piece.movement -= Math.max(movementX, movementY);
+              console.log(this.board[0][0].items);
+            }
           }
         }
         else {
           //piece stay on the same square
-          piece.moveToPosition(newX, newY); //to center in the square
+          piece.moveToPosition(oldX, oldY); //to center in the square
         }
       },
 
+      _getSquareOwner(newX, newY) {
+        let owner = '';
+        const boardSquare = this.board[newX][newY];
+        if (boardSquare) {
+          owner = boardSquare.owner;
+        }
+        return owner;
+      },
 
       _zoomChanged(zoom, oldZoom) {
         if (oldZoom) {

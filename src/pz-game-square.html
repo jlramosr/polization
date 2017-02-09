@@ -12,13 +12,13 @@
       }
 
       :host([visible][type="land"]) {
-        background: #C9F2D6;
-        /*background: #fff;*/
+        /*background: #C9F2D6;*/
+        background: #fff;
       }
 
       :host([visible][type="sea"]) {
-        background: #ABB4EF;
-        /*background: #ddd;*/
+        /*background: #ABB4EF;*/
+        background: #ddd;
       }
 
       :host([active]) {
@@ -44,13 +44,14 @@
 
         width: Number,
 
-        positionX: {
-          type: Number,
-          reflectToAttribute: true,
-          value: 45
-        },
+        positionX: Number,
 
         positionY: Number,
+
+        pieces: { 
+          type: Array,
+          value: _ => []
+        },
 
         type: {
           type: String,
