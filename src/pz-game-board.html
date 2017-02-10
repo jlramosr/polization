@@ -32,22 +32,24 @@
       }
 
       .world {
-        @apply(--layout-vertical);
+        position: relative;
         display: inline-block; /* these div sizes (width,height) depends on its children */
         will-change: transform;
         transform-origin: top left;
         position: relative;
         margin: 100px;
+        column-gap: 0;
       }
 
-      .world__row {
-        @apply(--layout-horizontal);
+      .world__column {
+        @apply(--layout-vertical);
       }
 
-      .world__piece {
+      .piece {
         position: absolute;
         top: 0;
         left: 0;
+        z-index: 1;
       }
 
     </style>
@@ -63,42 +65,46 @@
 
       <div class="universe" id="universe">
 
-        <div class="world" id="world">
+        <div class="world" id="world" style$="column-count:[[world.length]]">
 
-            <template is="dom-repeat" items="[[world]]" index-as="y">
-              <div class="world__row">
-                <template is="dom-repeat" items="[[_getRowSquares(y)]]" as="square" index-as="x">
+            <template is="dom-repeat" items="{{world}}" index-as="x">
+
+              <div class="world__column">
+
+                <template is="dom-repeat" items="{{_getWorldColumn(x)}}" as="square" index-as="y">
+                  
                   <pz-game-square
                     id="square[[x]][[y]]"
                     width="[[squareWidth]]"
                     type="[[square.type]]"
-                    visible="[[square.visible]]"
+                    visible
                     position-x="[[x]]"
                     position-y="[[y]]"></pz-game-square>
-                </template>
-              </div>
-            </template>
+                
+                  <template is="dom-repeat" items="{{_getWorldPieces(x,y)}}" as="piece">
+                    <pz-game-piece
+                      class="piece"
+                      square-width="[[squareWidth]]"
+                      app-user="[[appUser]]"
+                      turn="[[turn]]"
+                      selected="[[piece.selected]]"
+                      type="[[piece.type]]"
+                      position-x="{{x}}"
+                      position-y="{{y}}"
+                      user="[[piece.user]]"
+                      color="[[piece.color]]"
+                      max-movement="[[piece.maxMovement]]"
+                      movement="[[piece.movement]]"
+                      max-attack="[[piece.maxAttack]]"
+                      attack="[[piece.attack]]"
+                      max-defense="[[piece.maxDefense]]"
+                      defense="[[piece.defense]]"></pz-game-piece>
+                  </template>
 
-            <template is="dom-repeat" items="{{civilizations}}" as="civilization">
-              <template id="piecesRepeatTemplate" is="dom-repeat" items="{{civilization.pieces}}" as="piece">
-                <pz-game-piece
-                  class="world__piece"
-                  square-width="[[squareWidth]]"
-                  app-user="[[appUser]]"
-                  turn="[[turn]]"
-                  selected="[[piece.selected]]"
-                  type="[[piece.type]]"
-                  position-x="{{piece.positionX}}"
-                  position-y="{{piece.positionY}}"
-                  user="[[civilization.user]]"
-                  color="[[civilization.color]]"
-                  max-movement="[[piece.maxMovement]]"
-                  movement="[[piece.movement]]"
-                  max-attack="[[piece.maxAttack]]"
-                  attack="[[piece.attack]]"
-                  max-defense="[[piece.maxDefense]]"
-                  defense="[[piece.defense]]"></pz-game-piece>
-              </template>
+                </template>
+
+              </div>
+
             </template>
 
         </div>
@@ -154,11 +160,6 @@
 
       },
 
-      observers: [
-        '_initializeBoard(world.*, civilizations.*)',
-        '_recordActionBoard(civilizations.*)',
-      ],
-
       listeners: {
         'piece-selected': '_onPieceSelected',
         'piece-deselected': '_onPieceDeselected',
@@ -169,8 +170,6 @@
 
 
       attached() {
-
-        //this.$.world.addEventListener('dom-change', this._onDomChangeWorld);
         
         this.$.universe.addEventListener('pointerdown', this._onPointerDownUniverse);
 
@@ -182,69 +181,14 @@
 
       },
 
-      _initializeBoard(worldRecord, civsRecord) {
-        //https://www.polymer-project.org/1.0/docs/devguide/observers#deep-observation
-
-        const civsPath = civsRecord.path;
-        const worldPath = worldRecord.path;
-        const civs = civsRecord.value;
-        const world = worldRecord.value;
-
-        if (civsPath === 'civilizations' && worldPath === 'world') {
-
-          //board[x][y] = { owner:'' , items: [] }. In this items array will go all items (pieces, cities, ...) of the square (x,y)
-          world.forEach((row, y) => {
-            for (x in world[y]) {
-              if (y == 0) {
-                this.push('board', []);
-              }
-              const boardSquareInfo = { 'owner':'', 'items': [] };
-              this.push(`board.${x}`, boardSquareInfo)
-            }
-          });
-
-          //fill boards[x][y]
-          civs.forEach(civ => {
-            civ.pieces.forEach(piece => {
-              this.push(`board.${piece.positionX}.${piece.positionY}.items`, piece);
-              this.board[piece.positionX][piece.positionY].owner = civ.user;
-            });
-          });
-        }
+      _getWorldColumn(x) {
+        //https://www.polymer-project.org/1.0/docs/devguide/data-binding#array-binding
+        return this.world[x];
       },
 
-      _recordActionBoard(civsRecord) {
-        //https://www.polymer-project.org/1.0/docs/devguide/observers#deep-observation
-
-        const path = civsRecord.path; //civilizations.#1.pieces.#0.positionX
-        const value = civsRecord.value;
-        
-        const piecesSubpath = path.indexOf('.pieces');
-        if (piecesSubpath >= 0) {
-          //there is a change relative to pieces
-          console.log("there is a change relative to pieces");
-          const civPath = path.substring(0, piecesSubpath);
-          const civ = this.get(civPath);
-
-          const positionXPath = path.indexOf('.positionX');
-          const positionYPath = path.indexOf('.positionY');
-          if (positionXPath >= 0 || positionYPath >= 0) {
-            //there is a change relative to a piece position
-            console.log("there is a change relative to a piece position", positionXPath, positionYPath);
-            const piecePath = path.substring(0, positionXPath) || path.substring(0, positionYPath); 
-            const piece = this.get(piecePath);
-          }
-          
-        }
-      },
-
-      _getRowSquares(index) {
-        return this.world[index];
-      },
-
-      _onDomChangeWorld(event) {
-        Polymer.dom(this).querySelector('#piecesRepeatTemplate').addEventListener('onReady', ev => {
-        });
+      _getWorldPieces(x, y) {
+        console.log("Cambiado un x,y", x, y);
+        return this.world[x][y].pieces;
       },
 
       _onPointerDownUniverse(event) {
@@ -306,7 +250,7 @@
         const oldPositionY = piece.positionY;
 
         const newPositionX = piece._getCoordinatePosition(clientX);
-        const newPositionY = piece._getCoordinatePosition(clientY); 
+        const newPositionY = piece._getCoordinatePosition(clientY);
 
         this._movePiece(piece, oldPositionX, oldPositionY, newPositionX, newPositionY);
         
@@ -316,6 +260,7 @@
       _movePiece(piece, oldX, oldY, newX, newY) {
         const movementX = Math.abs(oldX - newX);
         const movementY = Math.abs(oldY - newY);
+        console.log("MOVIMIENTOOOO", oldX, oldY, newX, newY);
         if (movementX || movementY) {
           //piece has changed of square
           const pieceMovement = piece.movement;
@@ -333,33 +278,27 @@
              */
             const squareOwner = this._getSquareOwner(newX, newY);
             if (squareOwner) {
+                      
               //1
               if (this.appUser == squareOwner) {
                 //1.1
-
-                piece.moveToPosition(oldX, oldY);
+                //piece.moveToPosition(oldX, oldY);
                 console.log("ES MIAAAAA");
               }
               else {
                 //1.2
-                piece.moveToPosition(oldX, oldY);
+                //piece.moveToPosition(oldX, oldY);
                 console.log("ATAQUEEEEEEEEEEEEEEEEEEEEE!!!!");
               }
             }
             else {
               //2.2
-              piece.moveToPosition(newX, newY);
-              console.log(this.board[0][0].items);
-
-              this.push(`board.${newX}.${newY}.items`, piece);
-              this.board[newX][newY].owner = this.appUser;
-
-              const index = this.board[oldX][oldY].items.indexOf(piece);
-              this.splice(`board.${oldX}.${oldY}.items`, index, 1);
-              this.board[oldX][oldY].owner = "";
-              
+              //piece.moveToPosition(newX, newY);
+              console.log(this.world[oldX][oldY]);
+              this.world[oldX][oldY].pieces.shift(piece);
+              console.log(this.world[oldX][oldY]);
+              this.world[newX][newY].pieces.push(piece);
               piece.movement -= Math.max(movementX, movementY);
-              console.log(this.board[0][0].items);
             }
           }
         }
@@ -369,13 +308,17 @@
         }
       },
 
-      _getSquareOwner(newX, newY) {
-        let owner = '';
-        const boardSquare = this.board[newX][newY];
-        if (boardSquare) {
-          owner = boardSquare.owner;
+      _getSquareOwner(x, y) {
+        const square = this.world[x][y];
+        const city = square.city;
+        if (city.name) {
+          return city.user;
         }
-        return owner;
+        const pieces = square.pieces;
+        if (pieces.length) {
+          return pieces[0].user;
+        }
+        return '';
       },
 
       _zoomChanged(zoom, oldZoom) {

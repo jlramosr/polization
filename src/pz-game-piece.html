@@ -7,7 +7,7 @@
 
     <style>
       :host {
-        display: none;
+        position: relative;
         display: none;
         opacity: 0.5;
       }
@@ -66,15 +66,13 @@
     </style>
 
 
-    <div id="pieceContainer">
-      <iron-icon class="icon" id="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
-      <paper-spinner-lite class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
-      <template is="dom-if" if="[[selected]]">
-        <span class="info info__movement">{{movement}}</span>
-        <span class="info info__attack">{{attack}}</span>
-        <span class="info info__defense">{{defense}}</span>
-      </template>
-    </div>
+    <iron-icon class="icon" id="icon" style$="color:[[color]];" icon$="[[type]]"></iron-icon>
+    <paper-spinner-lite class="spinner" active="[[_computeSpinnerActive(selected, dragging)]]"></paper-spinner-lite>
+    <template is="dom-if" if="[[selected]]">
+      <span class="info info__movement">{{movement}}</span>
+      <span class="info info__attack">{{attack}}</span>
+      <span class="info info__defense">{{defense}}</span>
+    </template>
 
 
   </template>
@@ -216,8 +214,6 @@
       behaviors: [
         Polymer.IronResizableBehavior
       ],
-
-
 
 
 
