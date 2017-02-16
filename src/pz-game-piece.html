@@ -85,6 +85,8 @@
 
       properties: {
 
+        id: String,
+
         width: {
           type: Number,
           readOnly: true,
@@ -98,7 +100,7 @@
 
         turn: String,
 
-        squareWidth: Number,
+        cellWidth: Number,
 
         clientX: { 
           type: Number,
@@ -110,12 +112,12 @@
           readOnly: true
         },
 
-        positionX: {
+        cellX: {
           type: Number,
           notify: true
         },
 
-        positionY: {
+        cellY: {
           type: Number,
           notify: true
         },
@@ -208,18 +210,14 @@
 
       },
 
-      observers: [
-      ],
 
       behaviors: [
         Polymer.IronResizableBehavior
       ],
 
-
-
       created() {
-        this._onIronResize = this._onIronResize.bind(this);
-        this._onKeyDown = this._onKeyDown.bind(this);
+        this._ironResize = this._ironResize.bind(this);
+        this._keyDown = this._keyDown.bind(this);
       },
 
       attached() {
@@ -227,8 +225,8 @@
         this.style.display = 'block';
         this.$.icon.style.width = this.width + 'px';
         this.$.icon.style.height = this.width + 'px';
-        this._moveToClient(this._getCoordinateClient(this.positionX), 
-                           this._getCoordinateClient(this.positionY));
+        this._moveToClient(this._getCoordinateClient(this.cellX), 
+                           this._getCoordinateClient(this.cellY));
       },
 
       detached() {
@@ -238,25 +236,24 @@
       _toggleListeners(enable) {
         const m = enable ? 'addEventListener' : 'removeEventListener';
         if (this.user == this.appUser) {
-          this[m]('pointerdown', this._onPointerDown);
-          this[m]('pointerup', this._onPointerUp);
-          this[m]('pointermove', this._onPointerMove);
-          this[m]('pointerleave', this._onPointerLeave);
+          this[m]('pointerdown', this._pointerDown);
+          this[m]('pointerup', this._pointerUp);
+          this[m]('pointermove', this._pointerMove);
+          this[m]('pointerleave', this._pointerLeave);
         }  
-        this[m]('iron-resize', this._onIronResize);
-        document.body[m]('keydown', this._onKeyDown);
+        this[m]('iron-resize', this._ironResize);
+        document.body[m]('keydown', this._keyDown);
       },
 
-      moveToPosition(x, y) {
+      dropToCell(x, y) {
         this._moveToClient(this._getCoordinateClient(x), this._getCoordinateClient(y));
-        this.positionX = x;
-        this.positionY = y;
       },
 
 
-
-
-
+      getCoordinateCell(coordinateClient) {
+        const cellDecimal = coordinateClient / this.cellWidth;
+        return Math.trunc(cellDecimal);
+      },
 
 
       _movementChanged(movement) {
@@ -267,22 +264,15 @@
       },
 
 
-
-
-
-  
-
-      _onIronResize(event) {
-        
+      _ironResize(event) {
       },
-
 
       /**
        * Fired when the user press the mouse over the piece or touch the element.
        *
        * It updates pointer down position of the piece and initialize the position of the drag.
        */ 
-      _onPointerDown(event) {
+      _pointerDown(event) {
 
         if (this.allowMovement) {
 
@@ -307,7 +297,7 @@
        *
        * It's a handler of object selected property. Always set dragging to false, updating the new corner of the object.
        */ 
-      _onPointerUp(event) {
+      _pointerUp(event) {
 
         if (this.allowMovement) {
 
@@ -317,7 +307,6 @@
           const samePositionDown = (pointerX ==  this.pointerDownX && pointerY == this.pointerDownY);
           if (samePositionDown) {
             this.fire(this.selected ? 'piece-deselected' : 'piece-selected', this);
-            //this.selected = !this.selected;
           }
 
           if (this.dragging && !samePositionDown) {
@@ -335,7 +324,7 @@
        *
        * If the object is being dragged, update its position through the element.
        */ 
-      _onPointerMove(event) {
+      _pointerMove(event) {
         
         if (this.selected && this.dragging) {
 
@@ -361,7 +350,7 @@
       /**
        * Fired when user press down a key.
        */ 
-      _onKeyDown(event) {
+      _keyDown(event) {
 
         const escKey = 27;
         const arrowLeftKey = 37;
@@ -376,8 +365,6 @@
       },
 
 
-
-
       _moveToClient(clientX, clientY) {
         const centerClientX = (clientX - this.width/2);
         const centerClientY = (clientY - this.width/2);
@@ -388,31 +375,18 @@
         this._setClientY(clientY);
       },
 
-      _getCoordinatePosition(coordinateClient) {
-        const positionDecimal = coordinateClient / this.squareWidth;
-        return Math.trunc(positionDecimal);
+      _getCoordinateClient(coordinateCell) {
+        return this.cellWidth * (coordinateCell + 0.5);
       },
-
-      _getCoordinateClient(coordinatePosition) {
-        return this.squareWidth * (coordinatePosition + 0.5);
-      },
-
-
 
 
       _computeAllowMovement(appUser, turn, user, movement) {
         return user == appUser && user == turn && movement > 0;
       },
 
-
-
-
-
       _computeSpinnerActive(selected, dragging) {
         return selected && !dragging;
       }
-
-
 
     });
 

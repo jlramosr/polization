@@ -4,7 +4,7 @@
 
 <link rel="import" href="shared-styles.html">
 
-<link rel="import" href="pz-game-square.html">
+<link rel="import" href="pz-game-cell.html">
 <link rel="import" href="pz-game-piece.html">
 
 <dom-module id="pz-game-board">
@@ -63,7 +63,7 @@
 
     <div class="container" id="container">
 
-      <div class="universe" id="universe">
+      <div class="universe" on-wheel="_onWheelUniverse" id="universe">
 
         <div class="world" id="world" style$="column-count:[[world.length]]">
 
@@ -71,26 +71,27 @@
 
               <div class="world__column">
 
-                <template is="dom-repeat" items="{{_getWorldColumn(x)}}" as="square" index-as="y">
+                <template is="dom-repeat" items="{{_getWorldColumn(x)}}" as="cell" index-as="y">
                   
-                  <pz-game-square
-                    id="square[[x]][[y]]"
-                    width="[[squareWidth]]"
-                    type="[[square.type]]"
+                  <pz-game-cell
+                    id="cell[[x]][[y]]"
+                    width="[[cellWidth]]"
+                    type="[[cell.type]]"
                     visible
                     position-x="[[x]]"
-                    position-y="[[y]]"></pz-game-square>
+                    position-y="[[y]]"></pz-game-cell>
                 
                   <template is="dom-repeat" items="{{_getWorldPieces(x,y)}}" as="piece">
                     <pz-game-piece
                       class="piece"
-                      square-width="[[squareWidth]]"
+                      cell-width="[[cellWidth]]"
                       app-user="[[appUser]]"
                       turn="[[turn]]"
                       selected="[[piece.selected]]"
                       type="[[piece.type]]"
-                      position-x="{{x}}"
-                      position-y="{{y}}"
+                      id="[[piece.id]]"
+                      cell-x="{{x}}"
+                      cell-y="{{y}}"
                       user="[[piece.user]]"
                       color="[[piece.color]]"
                       max-movement="[[piece.maxMovement]]"
@@ -136,12 +137,12 @@
 
         turn: String,
 
-        squareActive: { 
+        cellActive: { 
           type: Object,
           readOnly: true,
         },
 
-        squareWidth: {
+        cellWidth: {
           type: Number,
           readOnly: true,
           value: 72
@@ -161,25 +162,13 @@
       },
 
       listeners: {
-        'piece-selected': '_onPieceSelected',
-        'piece-deselected': '_onPieceDeselected',
-        'piece-without-movement': '_onPieceWithoutMovement',
-        'piece-dragging': '_onPieceDragging',
-        'piece-finish-drag': '_onPieceFinishDrag'
+        'piece-selected': '_pieceSelected',
+        'piece-deselected': '_pieceDeselected',
+        'piece-without-movement': '_pieceWithoutMovement',
+        'piece-dragging': '_pieceDragging',
+        'piece-finish-drag': '_pieceFinishDrag'
       },
 
-
-      attached() {
-        
-        this.$.universe.addEventListener('pointerdown', this._onPointerDownUniverse);
-
-        this.$.universe.addEventListener('wheel', _ => {
-          event.preventDefault(); // it prevents all y-axis screen movements
-          if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
-          if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
-        }); //touchmove es el equivalente
-
-      },
 
       _getWorldColumn(x) {
         //https://www.polymer-project.org/1.0/docs/devguide/data-binding#array-binding
@@ -187,30 +176,26 @@
       },
 
       _getWorldPieces(x, y) {
-        console.log("Cambiado un x,y", x, y);
         return this.world[x][y].pieces;
       },
 
-      _onPointerDownUniverse(event) {
-      },
-
-      _onWheelMouse(event) {
-        event.preventDefault();
+      _onWheelUniverse(event) { //touchmove es el equivalente
+        event.preventDefault(); // it prevents all y-axis screen movements
         if (event.deltaY < 0 && this.zoom < 10) this.zoom += 1;
         if (event.deltaY > 0 && this.zoom > 1) this.zoom -= 1;
       },
 
-      _onPieceSelected(event) {
+      _pieceSelected(event) {
         const piece = event.detail;
         const pieceSelected = this.$.world.querySelector('pz-game-piece[selected]');
         if (pieceSelected) {
           pieceSelected.selected = false;
         }
         piece.selected = true;
-        this._activeNearestSquares(piece);
+        this._activeNearestCells(piece);
       },
 
-      _onPieceDeselected(event) {
+      _pieceDeselected(event) {
         const piece = event.detail;
         const nextPiece = this._getNextPiece();
         if (nextPiece) {
@@ -219,7 +204,7 @@
         piece.selected = false; 
       },
 
-      _onPieceWithoutMovement(event) {
+      _pieceWithoutMovement(event) {
         const piece = event.detail;
         const nextPiece = this._getNextPiece();
         if (nextPiece) {
@@ -228,33 +213,33 @@
         piece.selected = false; 
       },
 
-      _onPieceDragging(event) {
+      _pieceDragging(event) {
         const piece = event.detail;
 
         const clientX = piece.clientX;
         const clientY = piece.clientY;
 
-        const dragPositionX = piece._getCoordinatePosition(clientX);
-        const dragPositionY = piece._getCoordinatePosition(clientY);
+        const dragCellX = piece.getCoordinateCell(clientX);
+        const dragCellY = piece.getCoordinateCell(clientY);
 
-        this._changeSquareActive(dragPositionX, dragPositionY);
+        this._changeCellActive(dragCellX, dragCellY);
       },
 
-      _onPieceFinishDrag(event) {
+      _pieceFinishDrag(event) {
         const piece = event.detail;
 
         const clientX = piece.clientX;
         const clientY = piece.clientY;
 
-        const oldPositionX = piece.positionX;
-        const oldPositionY = piece.positionY;
+        const oldCellX = piece.cellX;
+        const oldCellY = piece.cellY;
 
-        const newPositionX = piece._getCoordinatePosition(clientX);
-        const newPositionY = piece._getCoordinatePosition(clientY);
+        const newCellX = piece.getCoordinateCell(clientX);
+        const newCellY = piece.getCoordinateCell(clientY);
 
-        this._movePiece(piece, oldPositionX, oldPositionY, newPositionX, newPositionY);
+        this._movePiece(piece, oldCellX, oldCellY, newCellX, newCellY);
         
-        this._changeSquareActive();
+        this._changeCellActive();
       },
 
       _movePiece(piece, oldX, oldY, newX, newY) {
@@ -262,59 +247,67 @@
         const movementY = Math.abs(oldY - newY);
         console.log("MOVIMIENTOOOO", oldX, oldY, newX, newY);
         if (movementX || movementY) {
-          //piece has changed of square
+          //piece has changed of cell
           const pieceMovement = piece.movement;
           if (movementX <= pieceMovement && movementY <= pieceMovement) {
             //piece has enough movements
             /* 
-             * 1. Square is ocuppied
+             * 1. Cell is ocuppied
              *  1.1. It's ocuppied by a piece of mine
              *  1.2. It's ocuppied by the opponent
              *    1.2.1. It's a piece
              *    1.2.2. It's a city
-             * 2. Square is empty
-             *  2.1. The movement is not possible (i.e.sea square for land piece)
+             * 2. Cell is empty
+             *  2.1. The movement is not possible (i.e.sea cell for land piece)
              *  2.2. The movement is possible
              */
-            const squareOwner = this._getSquareOwner(newX, newY);
-            if (squareOwner) {
+            const cellOwner = this._getCellOwner(newX, newY);
+            if (cellOwner) {
                       
               //1
-              if (this.appUser == squareOwner) {
+              if (this.appUser == cellOwner) {
                 //1.1
-                //piece.moveToPosition(oldX, oldY);
+                //piece.dropToCell(oldX, oldY);
                 console.log("ES MIAAAAA");
               }
               else {
                 //1.2
-                //piece.moveToPosition(oldX, oldY);
+                //piece.dropToCell(oldX, oldY);
                 console.log("ATAQUEEEEEEEEEEEEEEEEEEEEE!!!!");
               }
             }
             else {
               //2.2
-              //piece.moveToPosition(newX, newY);
+              
+              console.log("this.world", this.world[oldX][oldY].pieces[0].id, "piece", piece.id);
               console.log(this.world[oldX][oldY]);
-              this.world[oldX][oldY].pieces.shift(piece);
+              console.log(this.world[newX][newY]);
+              const index = this.world[oldX][oldY].pieces.indexOf(piece);
+              console.log(index);
+              /*this.shift(`world.#${newX}.#${newY}.pieces`, piece);
+              this.push(`world.#${newX}.#${newY}.pieces`, piece);*/
+              //piece.dropToCell(newX, newY);
               console.log(this.world[oldX][oldY]);
-              this.world[newX][newY].pieces.push(piece);
+              console.log(this.world[newX][newY]);
+              /*this.world[oldX][oldY].pieces.shift(piece);
+              this.world[newX][newY].pieces.push(piece);*/
               piece.movement -= Math.max(movementX, movementY);
             }
           }
         }
         else {
-          //piece stay on the same square
-          piece.moveToPosition(oldX, oldY); //to center in the square
+          //piece stay on the same cell
+          piece.dropToCell(oldX, oldY); //to center in the cell
         }
       },
 
-      _getSquareOwner(x, y) {
-        const square = this.world[x][y];
-        const city = square.city;
+      _getCellOwner(x, y) {
+        const cell = this.world[x][y];
+        const city = cell.city;
         if (city.name) {
           return city.user;
         }
-        const pieces = square.pieces;
+        const pieces = cell.pieces;
         if (pieces.length) {
           return pieces[0].user;
         }
@@ -341,34 +334,34 @@
         return this.$.world.querySelector(`pz-game-piece[user$="${this.appUser}"][allow-movement]:not([selected])`);
       },
 
-      _changeSquareActive(positionX, positionY) {
-        const squareActive = this.squareActive;
-        if (positionX == undefined || !positionY == undefined) {
-          if (squareActive) squareActive.highlited = false;
+      _changeCellActive(cellX, cellY) {
+        const cellActive = this.cellActive;
+        if (cellX == undefined || !cellY == undefined) {
+          if (cellActive) cellActive.highlited = false;
           return;
         }
-        const square = Polymer.dom(this.$.world).querySelector(`#square${positionX}${positionY}`);
-        if (squareActive && squareActive != square) {
-          squareActive.highlited = false;
+        const cell = Polymer.dom(this.$.world).querySelector(`#cell${cellX}${cellY}`);
+        if (cellActive && cellActive != cell) {
+          cellActive.highlited = false;
         }
-        if (!squareActive || squareActive != square) {
-          this._setSquareActive(square);
-          square.highlited = true;
+        if (!cellActive || cellActive != cell) {
+          this._setCellActive(cell);
+          cell.highlited = true;
         }
       },
 
-      _activeNearestSquares(piece) {
-        const allSquares = Polymer.dom(this.$.world).querySelectorAll('pz-game-square');
-        for (square of allSquares) {
-          square.active = this._isNear(square, piece, piece.movement);
+      _activeNearestCells(piece) {
+        const allCells = Polymer.dom(this.$.world).querySelectorAll('pz-game-cell');
+        for (cell of allCells) {
+          cell.active = this._isNear(cell, piece, piece.movement);
         } 
       },
 
       /**
         * It transforms a level of zoom in scale to handle mouse wheel events.
         *
-        * A zoom of 4 is equivalent to scale of 1. Width and height of all squares in 
-        * scale equal to 1 is indicated in --app-square-size variable of shared-styles CSS.
+        * A zoom of 4 is equivalent to scale of 1. Width and height of all cells in 
+        * scale equal to 1 is indicated in --app-cell-size variable of shared-styles CSS.
         * 
         *-@param {Number} Zoom level.
         * @return {Number} The scale to use in the animation.
@@ -378,17 +371,17 @@
       },
 
       /**
-        * It indicates if one piece is near of other one.
+        * It indicates if one cell is near of one piece.
         * 
-        * @param {Object} First piece or square with its positions.
-        * @param {Object} Second piece or square with its positions.
-        *-@param {Number} Number of around square.
+        * @param {Object} The cell.
+        * @param {Object} The piece.
+        *-@param {Number} Number of around cell.
         * @return {Boolean} True if it's near, false in other case.
         */
-      _isNear(square1, square2, numberSquares) {
-        return Boolean(numberSquares) &&
-               Math.abs(square1.positionX - square2.positionX) <= numberSquares &&
-               Math.abs(square1.positionY - square2.positionY) <= numberSquares;
+      _isNear(cell, piece, numberCells) {
+        return Boolean(numberCells) &&
+               Math.abs(cell.positionX - piece.cellX) <= numberCells &&
+               Math.abs(cell.positionY - piece.cellY) <= numberCells;
       },
 
       _visibleChanged(visible) {
