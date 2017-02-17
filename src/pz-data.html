@@ -7,8 +7,8 @@
     var game = {
       "turn": "12345",
       "civilizations": [
-        {"name": "England", "color": "blue", "user": "12346"},
-        {"name": "Spain", "color": "red", "user": "12345"}
+        {"id":"1", "name": "England", "color": "blue", "user": "12346"},
+        {"id":"2", "name": "Spain", "color": "red", "user": "12345"}
       ],
       "world": [
         [ //column 0: 00,01,02,03,04,05
@@ -69,7 +69,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "explorer", "civilization": "England", "color": "blue", "user": "12346", "positionX": 1, "positionY": 1, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
+              {"id": "1234601", "type": "explorer", "civilization": "England", "color": "blue", "user": "12346", "positionX": 1, "positionY": 1, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
             ],
             "city": {},
             "resources": []
@@ -152,7 +152,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "spearman", "civilization": "England", "color": "blue", "user": "12346", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
+              {"id": "1234602", "type": "spearman", "civilization": "England", "color": "blue", "user": "12346", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
             ],
             "city": {},
             "resources": []
@@ -182,7 +182,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 }
+              {"id": "1234502", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 }
             ],
             "city": {},
             "resources": []
@@ -228,7 +228,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "explorer", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 }
+              {"id": "1234503", "type": "explorer", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 }
             ],
             "city": {},
             "resources": []
@@ -238,7 +238,7 @@
             "visibleFor": ["12345", "12346"], 
             "pieces": [
               ,
-              {"type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
+              {"id": "1234504", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
             ],
             "city": {},
             "resources": []
@@ -263,7 +263,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "explorer", "name": "England", "color": "blue", "user": "12346", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
+              {"id": "1234604", "type": "explorer", "name": "England", "color": "blue", "user": "12346", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
             ],
             "city": {},
             "resources": []
@@ -339,7 +339,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
+              {"id": "1234507", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
             ],
             "city": {},
             "resources": []
@@ -348,7 +348,7 @@
             "type": "land", 
             "visibleFor": ["12345", "12346"], 
             "pieces": [
-              {"type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2, "selected": true },
+              {"id": "1234508", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2, "selected": true },
             ],
             "city": {},
             "resources": []
@@ -384,56 +384,6 @@
         ],
       ]
     };
-    /*var game = {
-      "turn": "12345",
-      "world": [
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }
-        ],
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "sea", "visible": true },{"type": "sea", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }
-        ],
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "sea", "visible": true },
-          {"type": "sea", "visible": true },{"type": "sea", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }
-        ],
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }
-        ],
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }, {"type": "land", "visible": true },
-          {"type": "land", "visible": false },{"type": "land", "visible": false }
-        ],
-        [
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true },{"type": "land", "visible": true },
-          {"type": "land", "visible": true },{"type": "land", "visible": true }
-        ],
-      ],
-      "civilizations": [
-        {"name": "England", "color": "blue", "user": "12346", "pieces": [
-          {"type": "spearman", "positionX": 3, "positionY": 0, "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-          {"type": "explorer", "positionX": 5, "positionY": 2, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-          {"type": "spearman", "positionX": 3, "positionY": 4, "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 }
-        ]},
-        {"name": "Spain", "color": "red", "user": "12345", "pieces": [
-          {"type": "spearman", "positionX": 0, "positionY": 0, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-          {"type": "spearman", "positionX": 7, "positionY": 1, "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2, "selected": true },
-          {"type": "explorer", "positionX": 1, "positionY": 1, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-          {"type": "spearman", "positionX": 7, "positionY": 0, "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-          {"type": "explorer", "positionX": 4, "positionY": 4, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-          {"type": "spearman", "positionX": 4, "positionY": 5, "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-        ]}
-      ]
-    };*/
 
     Polymer({
 

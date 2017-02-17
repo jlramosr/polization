@@ -95,7 +95,7 @@
                       user="[[piece.user]]"
                       color="[[piece.color]]"
                       max-movement="[[piece.maxMovement]]"
-                      movement="[[piece.movement]]"
+                      movement="{{piece.movement}}"
                       max-attack="[[piece.maxAttack]]"
                       attack="[[piece.attack]]"
                       max-defense="[[piece.maxDefense]]"
@@ -176,6 +176,7 @@
       },
 
       _getWorldPieces(x, y) {
+        console.log("_getWorldPieces", x, y, this.world);
         return this.world[x][y].pieces;
       },
 
@@ -237,19 +238,36 @@
         const newCellX = piece.getCoordinateCell(clientX);
         const newCellY = piece.getCoordinateCell(clientY);
 
-        this._movePiece(piece, oldCellX, oldCellY, newCellX, newCellY);
-        
         this._changeCellActive();
+
+        this._handlePieceMovement(piece, oldCellX, oldCellY, newCellX, newCellY);
       },
 
-      _movePiece(piece, oldX, oldY, newX, newY) {
+      _handlePieceMovement(piece, oldX, oldY, newX, newY) {
         const movementX = Math.abs(oldX - newX);
         const movementY = Math.abs(oldY - newY);
-        console.log("MOVIMIENTOOOO", oldX, oldY, newX, newY);
+                     
         if (movementX || movementY) {
           //piece has changed of cell
+          let oldCellPieces = this.world[oldX][oldY].pieces;
+          let newCellPieces = this.world[newX][newY].pieces;
+          
+          console.log("MOV!!", piece, oldX, oldY, newX, newY);
+
+          let pieceObject;
+          let pieceOldIndex;
+          for (let i of oldCellPieces.keys()) {
+            if (oldCellPieces[i].id === piece.id) {
+              pieceObject = oldCellPieces[i];
+              pieceOldIndex = i;
+              break;
+            }
+          }          
           const pieceMovement = piece.movement;
+          const pieceId = pieceObject.id;
+
           if (movementX <= pieceMovement && movementY <= pieceMovement) {
+
             //piece has enough movements
             /* 
              * 1. Cell is ocuppied
@@ -266,39 +284,36 @@
                       
               //1
               if (this.appUser == cellOwner) {
-                //1.1
-                //piece.dropToCell(oldX, oldY);
-                console.log("ES MIAAAAA");
+                //1.1. Es mia
               }
               else {
-                //1.2
-                //piece.dropToCell(oldX, oldY);
-                console.log("ATAQUEEEEEEEEEEEEEEEEEEEEE!!!!");
+                //1.2. Es ataque
               }
             }
             else {
               //2.2
-              
-              console.log("this.world", this.world[oldX][oldY].pieces[0].id, "piece", piece.id);
-              console.log(this.world[oldX][oldY]);
-              console.log(this.world[newX][newY]);
-              const index = this.world[oldX][oldY].pieces.indexOf(piece);
-              console.log(index);
-              /*this.shift(`world.#${newX}.#${newY}.pieces`, piece);
-              this.push(`world.#${newX}.#${newY}.pieces`, piece);*/
-              //piece.dropToCell(newX, newY);
-              console.log(this.world[oldX][oldY]);
-              console.log(this.world[newX][newY]);
-              /*this.world[oldX][oldY].pieces.shift(piece);
-              this.world[newX][newY].pieces.push(piece);*/
+              this.splice(`world.#${oldX}.#${oldY}.pieces`, pieceOldIndex, 1);
+              piece.cellX = newX;
+              piece.cellY = newY;
               piece.movement -= Math.max(movementX, movementY);
+              this.push(`world.#${newX}.#${newY}.pieces`, pieceObject);
+              piece.dropToCellCenter(newX, newY);
             }
+
           }
+
+          else {
+            //the movement is greater than the rest of piece movement
+            piece.dropToCellCenter(oldX, oldX);
+          }
+
         }
+
         else {
           //piece stay on the same cell
-          piece.dropToCell(oldX, oldY); //to center in the cell
+          piece.dropToCellCenter(oldX, oldY);
         }
+
       },
 
       _getCellOwner(x, y) {

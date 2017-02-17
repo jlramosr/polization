@@ -155,6 +155,7 @@
 
         movement: {
           type: Number,
+          notify: true,
           observer: '_movementChanged'
         },
 
@@ -210,7 +211,6 @@
 
       },
 
-
       behaviors: [
         Polymer.IronResizableBehavior
       ],
@@ -245,7 +245,7 @@
         document.body[m]('keydown', this._keyDown);
       },
 
-      dropToCell(x, y) {
+      dropToCellCenter(x, y) {
         this._moveToClient(this._getCoordinateClient(x), this._getCoordinateClient(y));
       },
 
