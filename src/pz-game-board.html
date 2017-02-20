@@ -41,15 +41,20 @@
         column-gap: 0;
       }
 
-      .world__column {
+      .board {
+      }
+
+      .board__column {
         @apply(--layout-vertical);
+      }
+
+      .pieces {
       }
 
       .piece {
         position: absolute;
         top: 0;
         left: 0;
-        z-index: 1;
       }
 
     </style>
@@ -67,12 +72,17 @@
 
         <div class="world" id="world" style$="column-count:[[world.length]]">
 
+
+
+
+
+          <div class="board" id="board">
+
             <template is="dom-repeat" items="{{world}}" index-as="x">
 
-              <div class="world__column">
+              <div class="board__column">
 
-                <template is="dom-repeat" items="{{_getWorldColumn(x)}}" as="cell" index-as="y">
-                  
+                <template is="dom-repeat" items="[[_getWorldColumn(x)]]" as="cell" index-as="y">           
                   <pz-game-cell
                     id="cell[[x]][[y]]"
                     width="[[cellWidth]]"
@@ -80,33 +90,46 @@
                     visible
                     position-x="[[x]]"
                     position-y="[[y]]"></pz-game-cell>
-                
-                  <template is="dom-repeat" items="{{_getWorldPieces(x,y)}}" as="piece">
-                    <pz-game-piece
-                      class="piece"
-                      cell-width="[[cellWidth]]"
-                      app-user="[[appUser]]"
-                      turn="[[turn]]"
-                      selected="[[piece.selected]]"
-                      type="[[piece.type]]"
-                      id="[[piece.id]]"
-                      cell-x="{{x}}"
-                      cell-y="{{y}}"
-                      user="[[piece.user]]"
-                      color="[[piece.color]]"
-                      max-movement="[[piece.maxMovement]]"
-                      movement="{{piece.movement}}"
-                      max-attack="[[piece.maxAttack]]"
-                      attack="[[piece.attack]]"
-                      max-defense="[[piece.maxDefense]]"
-                      defense="[[piece.defense]]"></pz-game-piece>
-                  </template>
-
                 </template>
 
               </div>
 
             </template>
+            
+          </div>
+
+          <div class="pieces" id="pieces">
+
+            <template is="dom-repeat" items="{{world}}" index-as="x">
+
+              <template is="dom-repeat" items="[[_getWorldColumn(x)]]" index-as="y"> 
+
+                <template is="dom-repeat" items="[[_getCellPieces(x,y)]]" as="piece">
+                  <pz-game-piece
+                    class="piece"
+                    cell-width="[[cellWidth]]"
+                    app-user="[[appUser]]"
+                    turn="[[turn]]"
+                    selected="[[piece.selected]]"
+                    type="[[piece.type]]"
+                    id$="[[piece.id]]"
+                    cell-x="[[x]]"
+                    cell-y="[[y]]"
+                    user="[[piece.user]]"
+                    color="[[piece.color]]"
+                    max-movement="[[piece.maxMovement]]"
+                    movement="[[piece.movement]]"
+                    max-attack="[[piece.maxAttack]]"
+                    attack="[[piece.attack]]"
+                    max-defense="[[piece.maxDefense]]"
+                    defense="[[piece.defense]]"></pz-game-piece>
+                </template>
+
+              </template>
+            
+            </div>
+            
+          </template>
 
         </div>
 
@@ -137,11 +160,6 @@
 
         turn: String,
 
-        cellActive: { 
-          type: Object,
-          readOnly: true,
-        },
-
         cellWidth: {
           type: Number,
           readOnly: true,
@@ -162,21 +180,24 @@
       },
 
       listeners: {
+        'cell-pointer-move': '_cellPointerMove',
+        'cell-pointer-enter': '_cellPointerEnter',
+        'cell-pointer-leave': '_cellPointerLeave',
         'piece-selected': '_pieceSelected',
         'piece-deselected': '_pieceDeselected',
         'piece-without-movement': '_pieceWithoutMovement',
         'piece-dragging': '_pieceDragging',
-        'piece-finish-drag': '_pieceFinishDrag'
+        'piece-finish-drag': '_pieceFinishDrag',
+        'piece-pointer-move': '_piecePointerMove',
       },
-
 
       _getWorldColumn(x) {
         //https://www.polymer-project.org/1.0/docs/devguide/data-binding#array-binding
         return this.world[x];
       },
 
-      _getWorldPieces(x, y) {
-        console.log("_getWorldPieces", x, y, this.world);
+      _getCellPieces(x, y) {
+        console.log("getCellPieces", x, y);
         return this.world[x][y].pieces;
       },
 
@@ -188,30 +209,32 @@
 
       _pieceSelected(event) {
         const piece = event.detail;
+        const cell = this._getCell(piece.cellX, piece.cellY);
         const pieceSelected = this.$.world.querySelector('pz-game-piece[selected]');
         if (pieceSelected) {
           pieceSelected.selected = false;
+          cell.active = false;
         }
         piece.selected = true;
-        this._activeNearestCells(piece);
+        cell.active = true;
+        //this._activeNearestCells(piece);
       },
 
       _pieceDeselected(event) {
         const piece = event.detail;
+        const cell = this._getCell(piece.cellX,piece.cellY);
         const nextPiece = this._getNextPiece();
         if (nextPiece) {
           nextPiece.selected = true;
+          const nextCell = this._getCell(nextPiece.cellX,nextPiece.cellY);
+          nextCell.active = true;
         }
-        piece.selected = false; 
+        piece.selected = false;
+        cell.active = false;
       },
 
       _pieceWithoutMovement(event) {
-        const piece = event.detail;
-        const nextPiece = this._getNextPiece();
-        if (nextPiece) {
-          nextPiece.selected = true;
-        }
-        piece.selected = false; 
+        this._pieceDeselected(event);
       },
 
       _pieceDragging(event) {
@@ -222,8 +245,6 @@
 
         const dragCellX = piece.getCoordinateCell(clientX);
         const dragCellY = piece.getCoordinateCell(clientY);
-
-        this._changeCellActive(dragCellX, dragCellY);
       },
 
       _pieceFinishDrag(event) {
@@ -238,9 +259,24 @@
         const newCellX = piece.getCoordinateCell(clientX);
         const newCellY = piece.getCoordinateCell(clientY);
 
-        this._changeCellActive();
-
         this._handlePieceMovement(piece, oldCellX, oldCellY, newCellX, newCellY);
+      },
+
+      _piecePointerMove(event) {
+        const piece = event.detail;
+        const cell = this._getCell(piece.cellX,piece.cellY);
+      },
+
+      _cellPointerMove(event) {
+        const cell = event.detail;
+      },
+
+      _cellPointerEnter(event) {
+        const cell = event.detail;
+      },
+
+      _cellPointerLeave(event) {
+        const cell = event.detail;
       },
 
       _handlePieceMovement(piece, oldX, oldY, newX, newY) {
@@ -249,24 +285,11 @@
                      
         if (movementX || movementY) {
           //piece has changed of cell
-          let oldCellPieces = this.world[oldX][oldY].pieces;
-          let newCellPieces = this.world[newX][newY].pieces;
-          
-          console.log("MOV!!", piece, oldX, oldY, newX, newY);
+          console.log("MOV!!", oldX, oldY, newX, newY);
 
-          let pieceObject;
-          let pieceOldIndex;
-          for (let i of oldCellPieces.keys()) {
-            if (oldCellPieces[i].id === piece.id) {
-              pieceObject = oldCellPieces[i];
-              pieceOldIndex = i;
-              break;
-            }
-          }          
-          const pieceMovement = piece.movement;
-          const pieceId = pieceObject.id;
+          if (movementX <= piece.movement && movementY <= piece.movement) {
 
-          if (movementX <= pieceMovement && movementY <= pieceMovement) {
+            const movement = Math.max(movementX, movementY);
 
             //piece has enough movements
             /* 
@@ -284,19 +307,29 @@
                       
               //1
               if (this.appUser == cellOwner) {
-                //1.1. Es mia
+                //1.1
+                this._movePiece(piece, movement, oldX, oldY, newX, newY);
+                piece.dropToCellCenter(newX, newY);
               }
               else {
-                //1.2. Es ataque
+                //1.2
+                this._attack(newX, newY)
+                  .then(opponentIndexPiece => {
+                    console.log("HOLAAAA");
+                    this._deletePiece(opponentIndexPiece, oldX, oldY);
+                    this._movePiece(piece, movement, oldX, oldY, newX, newY);
+                    piece.dropToCellCenter(newX, newY);
+                  })
+                  .catch(_ => {
+                    console.log("FALLLOOO");
+                    this._deletePiece(piece, oldX, oldY);
+                  }
+                );
               }
             }
             else {
-              //2.2
-              this.splice(`world.#${oldX}.#${oldY}.pieces`, pieceOldIndex, 1);
-              piece.cellX = newX;
-              piece.cellY = newY;
-              piece.movement -= Math.max(movementX, movementY);
-              this.push(`world.#${newX}.#${newY}.pieces`, pieceObject);
+              //2.2  
+              this._movePiece(piece, movement, oldX, oldY, newX, newY);
               piece.dropToCellCenter(newX, newY);
             }
 
@@ -314,6 +347,53 @@
           piece.dropToCellCenter(oldX, oldY);
         }
 
+      },
+
+      _attack(piece, x, y) {
+        return new Promise((resolve, reject) => {
+          const opponentPieces = this.world[x][y].pieces;
+          if (piece.attack > pieces[0].attack) {
+            resolve(0);
+          }
+          else {
+            reject();
+          }
+        });
+      },
+
+      _deletePiece(indexPiece, x, y) {
+        this.splice(`world.#${x}.#${y}.pieces`, indexPiece, 1);
+      },
+
+      _movePiece(piece, movement, oldX, oldY, newX, newY) {
+          piece.cellX = newX;
+          piece.cellY = newY;
+          piece.movement -= movement;
+
+          const indexCellPiece = this._getIndexCellPiece(oldX, oldY, piece.id);
+          const pieceItem = this.get([`world.#${oldX}.#${oldY}.pieces`, indexCellPiece]);
+
+          const oldCell = this._getCell(oldX,oldY);
+          oldCell.active = false;
+          this.splice(`world.#${oldX}.#${oldY}.pieces`, indexCellPiece, 1);
+
+          const newCell = this._getCell(newX,newY);
+          if (piece.movement) newCell.active = true;
+          this.push(`world.#${newX}.#${newY}.pieces`, pieceItem);
+      },
+
+      _getCell(x,y) {
+        return Polymer.dom(this.$.world).querySelector(`#cell${x}${y}`)
+      },   
+
+      _getIndexCellPiece(x, y, id) {
+        const cellPieces = this.world[x][y].pieces;
+        for (let i of cellPieces.keys()) {
+          if (cellPieces[i].id === id) {
+            return i;
+          }
+        }
+        return -1; 
       },
 
       _getCellOwner(x, y) {
@@ -346,23 +426,7 @@
       },
 
       _getNextPiece() {
-        return this.$.world.querySelector(`pz-game-piece[user$="${this.appUser}"][allow-movement]:not([selected])`);
-      },
-
-      _changeCellActive(cellX, cellY) {
-        const cellActive = this.cellActive;
-        if (cellX == undefined || !cellY == undefined) {
-          if (cellActive) cellActive.highlited = false;
-          return;
-        }
-        const cell = Polymer.dom(this.$.world).querySelector(`#cell${cellX}${cellY}`);
-        if (cellActive && cellActive != cell) {
-          cellActive.highlited = false;
-        }
-        if (!cellActive || cellActive != cell) {
-          this._setCellActive(cell);
-          cell.highlited = true;
-        }
+        return Polymer.dom(this.$.world).querySelector(`pz-game-piece[user$="${this.appUser}"][allow-movement]:not([selected])`);
       },
 
       _activeNearestCells(piece) {

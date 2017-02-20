@@ -10,6 +10,7 @@
         position: relative;
         display: none;
         opacity: 0.5;
+        z-index: 1;
       }
 
       :host([allow-movement]:not([selected])) {
@@ -18,13 +19,14 @@
 
       :host([selected]) {
         opacity: 1;
+        z-index: 2;
         cursor: grabbing;
         cursor: -moz-grabbing;
         cursor: -webkit-grabbing;
       }
 
-      .icon {
-        z-index: 1;
+      :host(:not([allow-movement])) {
+        z-index: 0;
       }
 
       .spinner {
@@ -35,14 +37,14 @@
         left: -2px;
         width: calc(100% + 4px);
         height: calc(100% + 4px);
-        z-index: 0;
+        z-index: -1;
       }
 
       .info {
         position: absolute;
         font-size: 12px;
         font-weight: 800;
-        z-index: 2;
+        z-index: 0;
       }
 
       .info__movement {
@@ -112,12 +114,12 @@
           readOnly: true
         },
 
-        cellX: {
+        cellX: { 
           type: Number,
           notify: true
         },
 
-        cellY: {
+        cellY: { 
           type: Number,
           notify: true
         },
@@ -155,7 +157,6 @@
 
         movement: {
           type: Number,
-          notify: true,
           observer: '_movementChanged'
         },
 
@@ -240,6 +241,7 @@
           this[m]('pointerup', this._pointerUp);
           this[m]('pointermove', this._pointerMove);
           this[m]('pointerleave', this._pointerLeave);
+          this[m]('pointerenter', this._pointerEnter);
         }  
         this[m]('iron-resize', this._ironResize);
         document.body[m]('keydown', this._keyDown);
@@ -325,26 +327,31 @@
        * If the object is being dragged, update its position through the element.
        */ 
       _pointerMove(event) {
-        
+
+        this.fire('piece-pointer-move', this);
+
         if (this.selected && this.dragging) {
 
-            const pointerX = event.clientX;
-            const pointerY = event.clientY;
-            
-            const movementX = pointerX - this.lastPointerDragX;
-            const movementY = pointerY - this.lastPointerDragY;
+          const pointerX = event.clientX;
+          const pointerY = event.clientY;
+          
+          const movementX = pointerX - this.lastPointerDragX;
+          const movementY = pointerY - this.lastPointerDragY;
 
-            this._setLastPointerDragX(pointerX);
-            this._setLastPointerDragY(pointerY);
+          this._setLastPointerDragX(pointerX);
+          this._setLastPointerDragY(pointerY);
 
-            const newClientX = this.clientX + movementX;
-            const newClientY = this.clientY + movementY;
+          const newClientX = this.clientX + movementX;
+          const newClientY = this.clientY + movementY;
 
-            this._moveToClient(newClientX, newClientY);
-            this.fire('piece-dragging', this);
+          this._moveToClient(newClientX, newClientY);
+          this.fire('piece-dragging', this);
 
         }
 
+      },
+
+      _pointerEnter(event) {
       },
 
       /**
@@ -378,7 +385,6 @@
       _getCoordinateClient(coordinateCell) {
         return this.cellWidth * (coordinateCell + 0.5);
       },
-
 
       _computeAllowMovement(appUser, turn, user, movement) {
         return user == appUser && user == turn && movement > 0;

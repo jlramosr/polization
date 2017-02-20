@@ -21,11 +21,11 @@
         background: #ddd;
       }
 
-      :host([active]) {
-        opacity: 0.9;
+      :host(:hover) {
+        opacity: 0.86;
       }
 
-      :host([highlited]) {
+      :host([active]) {
         opacity: 1;
       }
     </style>
@@ -65,17 +65,37 @@
           reflectToAttribute: true,
           value: false
         },
-
-        highlited: {
-          type: Boolean,
-          reflectToAttribute: true,
-          value: false
-        }
       },
 
       attached() {
         this.style.width = this.width + 'px';
         this.style.height = this.width + 'px';
+        this._toggleListeners(true);
+      },
+
+      detached() {
+        this._toggleListeners(false);
+      },
+
+      _toggleListeners(enable) {
+        const m = enable ? 'addEventListener' : 'removeEventListener';
+        if (this.user == this.appUser) {
+          this[m]('pointermove', this._pointerMove);
+          this[m]('pointerleave', this._pointerLeave);
+          this[m]('pointerenter', this._pointerEnter);
+        }  
+      },
+
+      _pointerMove() {
+        this.fire('cell-pointer-move', this);
+      },
+
+      _pointerEnter() {
+        this.fire('cell-pointer-enter', this);
+      },
+
+      _pointerLeave() {
+        this.fire('cell-pointer-leave', this);
       }
 
     });
