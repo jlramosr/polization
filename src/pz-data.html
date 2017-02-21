@@ -1,391 +1,31 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/polymerfire/firebase.html">
+<link rel="import" href="../bower_components/polymerfire/polymerfire.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+
 
 <dom-module id="pz-data">
 
-  <script>
-  (function() {
-    var game = {
-      "turn": "12345",
-      "civilizations": [
-        {"id":"1", "name": "England", "color": "blue", "user": "12346"},
-        {"id":"2", "name": "Spain", "color": "red", "user": "12345"}
-      ],
-      "world": [
-        [ //column 0: 00,01,02,03,04,05
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234501", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 2, "movement": 2, "maxAttack": 3, "attack": 3, "maxDefense": 0, "defense": 0 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234571", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 2, "movement": 2, "maxAttack": 3, "attack": 3, "maxDefense": 0, "defense": 0 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 1: 10,11,12,13,14,15
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234601", "type": "explorer", "civilization": "England", "color": "blue", "user": "12346", "positionX": 1, "positionY": 1, "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 2: 20,21,22,23,24,25
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "sea", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 3: 30,31,32,33,34,35
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234602", "type": "spearman", "civilization": "England", "color": "blue", "user": "12346", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "sea", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "sea", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234502", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 }
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 4: 40,41,42,43,44,45
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "sea", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "sea", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234503", "type": "explorer", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 }
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234504", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-            ],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 5: 50,51,52,53,54,55
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234604", "type": "explorer", "name": "England", "color": "blue", "user": "12346", "maxMovement": 2, "movement": 2, "maxAttack": 0, "attack": 0, "maxDefense": 0, "defense": 0 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 6: 60,61,62,63,64,65
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-        [ //column 7: 70,71,72,73,74,75
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234507", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2 },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [
-              {"id": "1234508", "type": "spearman", "civilization": "Spain", "color": "red", "user": "12345", "maxMovement": 1, "movement": 1, "maxAttack": 1, "attack": 1, "maxDefense": 2, "defense": 2, "selected": true },
-            ],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-          { 
-            "type": "land", 
-            "visibleFor": ["12345", "12346"], 
-            "pieces": [],
-            "city": {},
-            "resources": []
-          },
-        ],
-      ]
-    };
+  <template>
 
+    <firebase-app
+      name="polization"
+      auth-domain="polization.firebaseapp.com"
+      database-url="https://polization.firebaseio.com"
+      api-key="AIzaSyDu1fnC8gUXnHlPhPN2S6rr_NTbCnXvLFk"></firebase-app>
+
+    <firebase-document
+      app-name="polization"
+      path="game"
+      data="{{game}}"></firebase-document>
+
+    <!--<firebase-auth id="auth" user="{{user}}" provider="google" on-error="handleError"></firebase-auth>-->
+
+  </template>
+
+  <script>
+  
     Polymer({
 
       is: 'pz-data',
@@ -394,16 +34,17 @@
 
         game: {
           type: Object,
-          value: game,
-          readOnly: true,
+          observer: '_gameChanged',
           notify: true
         }
 
+      },
+
+      _gameChanged(game, oldGame) {
       }
 
     });
 
-  })();
   </script>
 
 </dom-module>

@@ -147,13 +147,6 @@
 
       properties: {
 
-        board: {
-          type: Array,
-          value: _ => {
-            return [];
-          }
-        },
-
         world: Array,
 
         civilizations: Array,
@@ -197,7 +190,6 @@
       },
 
       _getCellPieces(x, y) {
-        console.log("getCellPieces", x, y);
         return this.world[x][y].pieces;
       },
 
@@ -253,13 +245,10 @@
         const clientX = piece.clientX;
         const clientY = piece.clientY;
 
-        const oldCellX = piece.cellX;
-        const oldCellY = piece.cellY;
-
         const newCellX = piece.getCoordinateCell(clientX);
         const newCellY = piece.getCoordinateCell(clientY);
 
-        this._handlePieceMovement(piece, oldCellX, oldCellY, newCellX, newCellY);
+        this._handlePieceMovement(newCellX, newCellY, piece);
       },
 
       _piecePointerMove(event) {
@@ -279,13 +268,14 @@
         const cell = event.detail;
       },
 
-      _handlePieceMovement(piece, oldX, oldY, newX, newY) {
+      _handlePieceMovement(newX, newY, piece) {
+        const oldX = piece.cellX;
+        const oldY = piece.cellY;
         const movementX = Math.abs(oldX - newX);
         const movementY = Math.abs(oldY - newY);
                      
         if (movementX || movementY) {
           //piece has changed of cell
-          console.log("MOV!!", oldX, oldY, newX, newY);
 
           if (movementX <= piece.movement && movementY <= piece.movement) {
 
@@ -308,28 +298,26 @@
               //1
               if (this.appUser == cellOwner) {
                 //1.1
-                this._movePiece(piece, movement, oldX, oldY, newX, newY);
+                this._movePiece(piece, movement, newX, newY);
                 piece.dropToCellCenter(newX, newY);
               }
               else {
                 //1.2
-                this._attack(newX, newY)
-                  .then(opponentIndexPiece => {
-                    console.log("HOLAAAA");
-                    this._deletePiece(opponentIndexPiece, oldX, oldY);
-                    this._movePiece(piece, movement, oldX, oldY, newX, newY);
+                this._handleAttackPiece(newX, newY, piece)
+                  .then(_ => {
+                    console.log("MUY BIEN HAS GANADO");
+                    this._movePiece(piece, movement, newX, newY);
                     piece.dropToCellCenter(newX, newY);
                   })
-                  .catch(_ => {
-                    console.log("FALLLOOO");
-                    this._deletePiece(piece, oldX, oldY);
+                  .catch(error => {
+                    console.log("OH VAYA HAS PERDIDO");
                   }
                 );
               }
             }
             else {
               //2.2  
-              this._movePiece(piece, movement, oldX, oldY, newX, newY);
+              this._movePiece(piece, movement, newX, newY);
               piece.dropToCellCenter(newX, newY);
             }
 
@@ -349,64 +337,109 @@
 
       },
 
-      _attack(piece, x, y) {
+      _handleAttackPiece(x, y, piece) {
         return new Promise((resolve, reject) => {
-          const opponentPieces = this.world[x][y].pieces;
-          if (piece.attack > pieces[0].attack) {
-            resolve(0);
-          }
-          else {
-            reject();
-          }
+
+          opponentPieces = this._getMoreDefensivePieces(x,y);
+          for (opponent of opponentPieces) {
+          //opponentPieces.forEach(opponent => {
+            debugger;
+            if (opponent.defense > piece.attack) {
+              this._removePiece(piece.cellX, piece.cellY, piece);
+              reject();
+              return;
+            }
+            else {
+              this._removePiece(x, y, opponent);
+            }
+          
+          };
+
+          resolve();
+
         });
       },
 
-      _deletePiece(indexPiece, x, y) {
-        this.splice(`world.#${x}.#${y}.pieces`, indexPiece, 1);
+      _insertPiece(x, y, pieceItem) {
+        if (!this.world[x][y].pieces) {
+          this.world[x][y].pieces = [];
+        }
+        this.push(`world.${x}.${y}.pieces`, pieceItem);
       },
 
-      _movePiece(piece, movement, oldX, oldY, newX, newY) {
+      _removePiece(x, y, pieceItem) {
+        const indexCellPiece = this._getIndexCellPiece(x, y, pieceItem.id);
+        this.splice(`world.${x}.${y}.pieces`, indexCellPiece, 1);
+      },
+
+      _movePiece(piece, movement, newX, newY) {
+          const oldX = piece.cellX;
+          const oldY = piece.cellY;
           piece.cellX = newX;
           piece.cellY = newY;
           piece.movement -= movement;
+          const pieceItem = this._getCellPiece(oldX, oldY, piece.id);
 
-          const indexCellPiece = this._getIndexCellPiece(oldX, oldY, piece.id);
-          const pieceItem = this.get([`world.#${oldX}.#${oldY}.pieces`, indexCellPiece]);
+          this._activeCell(oldX, oldY, false);
+          this._removePiece(oldX, oldY, pieceItem);
 
-          const oldCell = this._getCell(oldX,oldY);
-          oldCell.active = false;
-          this.splice(`world.#${oldX}.#${oldY}.pieces`, indexCellPiece, 1);
+          if (piece.movement) {
+            this._activeCell(newX, newY, true);
+          }
+          this._insertPiece(newX, newY, pieceItem);
+      },
 
-          const newCell = this._getCell(newX,newY);
-          if (piece.movement) newCell.active = true;
-          this.push(`world.#${newX}.#${newY}.pieces`, pieceItem);
+      _activeCell(x,y,active) {
+        cell = this._getCell(x,y);
+        cell.active = active;
       },
 
       _getCell(x,y) {
         return Polymer.dom(this.$.world).querySelector(`#cell${x}${y}`)
-      },   
+      },
+
+      _getMoreDefensivePieces(x,y) {
+        const opponentPieces = this._getCellPieces(x,y);
+        return opponentPieces.sort((a,b) => {
+          return b.defense - a.defense; 
+        })
+      },
+
+      _getCellPiece(x, y, id) {
+        const cellPieces = this._getCellPieces(x,y);
+        for (let cellPiece of cellPieces) {
+          if (cellPiece.id === id) {
+            return cellPiece;
+          }
+        }
+        return -1;
+      },
 
       _getIndexCellPiece(x, y, id) {
-        const cellPieces = this.world[x][y].pieces;
+        const cellPieces = this._getCellPieces(x,y);
         for (let i of cellPieces.keys()) {
           if (cellPieces[i].id === id) {
             return i;
           }
         }
-        return -1; 
+        return -1;
       },
 
       _getCellOwner(x, y) {
         const cell = this.world[x][y];
         const city = cell.city;
-        if (city.name) {
+        if (city && city.name) {
           return city.user;
         }
         const pieces = cell.pieces;
-        if (pieces.length) {
+        if (pieces && pieces.length) {
           return pieces[0].user;
         }
         return '';
+      },
+
+      _getNextPiece() {
+        return Polymer.dom(this.$.world).querySelector(`pz-game-piece[user$="${this.appUser}"][allow-movement]:not([selected])`);
       },
 
       _zoomChanged(zoom, oldZoom) {
@@ -423,10 +456,6 @@
             this.$.world.style.transform = `scale(${finalScale})`;
           };
         }
-      },
-
-      _getNextPiece() {
-        return Polymer.dom(this.$.world).querySelector(`pz-game-piece[user$="${this.appUser}"][allow-movement]:not([selected])`);
       },
 
       _activeNearestCells(piece) {

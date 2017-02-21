@@ -15,12 +15,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 
-<link rel="import" href="pz-category-data.html">
-
 <link rel="import" href="shared-styles.html">
 
-<!-- Since 'home' is the default route, eagerly load it. -->
-<!--<link rel="import" href="pz-home.html">-->
+<!-- Since 'game' is the default route, eagerly load it. -->
 <link rel="import" href="pz-game.html">
 
 <dom-module id="pz-app">
@@ -116,15 +113,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <iron-media-query query="max-width: 767px" query-matches="{{smallScreen}}"></iron-media-query>
 
-    <!--
-      zp-category-data provides the list of categories.
-    -->
-    <pz-category-data categories="{{categories}}"></pz-category-data>
-
 
     <iron-pages role="main" selected="[[page]]" attr-for-selected="name" selected-attribute="visible" fallback-selection="404">
       <!-- home view -->
-      <!--<pz-home name="home" categories="[[categories]]"></pz-home>-->
       <pz-game name="game"></pz-game>
       <!-- list of games -->
       <!-- list of friends -->

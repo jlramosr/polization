@@ -10,14 +10,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-icon/iron-icon.html">
-<link rel="import" href="pz-button.html">
 <link rel="import" href="pz-icons.html">
 
 <dom-module id="pz-network-warning">
 
   <template>
 
-    <style include="pz-button">
+    <style>
 
       :host {
         display: block;
@@ -41,7 +40,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 0;
       }
 
-      pz-button {
+      button {
         margin-top: 50px;
       }
 
@@ -55,9 +54,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1>No internet connection</h1>
       <p>Check if your device is connected to a mobile network or WiFi.</p>
     </div>
-    <pz-button>
-      <button on-tap="_tryReconnect">Try Again</button>
-    </pz-button>
+    <button on-tap="_tryReconnect">Try Again</button>
 
   </template>
 
